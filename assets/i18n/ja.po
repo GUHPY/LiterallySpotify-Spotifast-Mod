@@ -3330,3 +3330,448 @@ msgstr ""
 
 #~ msgid "Reduce lyrics motion"
 #~ msgstr "歌詞の動きを減らす"
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr "ズームを調整して、Spotifyを好みや用途に合わせられます。"
+
+
+msgid "All"
+msgstr "すべて"
+
+
+msgid "Alphabetical"
+msgstr "五十音順"
+
+
+msgid "Audiobooks"
+msgstr "オーディオブック"
+
+
+msgid "Blend"
+msgstr "ブレンド"
+
+
+msgid "Browse"
+msgstr "見つける"
+
+
+msgid "Clear recent searches"
+msgstr "最近の検索を消去"
+
+
+msgid "Collapse Your Library"
+msgstr "マイライブラリを折りたたむ"
+
+
+msgid "Compact grid"
+msgstr "コンパクトグリッド"
+
+
+msgid "Compact list"
+msgstr "コンパクトリスト"
+
+
+msgid "Connect"
+msgstr "接続"
+
+
+msgid "Creator"
+msgstr "作成者"
+
+
+msgid "Default"
+msgstr "標準"
+
+
+msgid "Dense"
+msgstr "コンパクト"
+
+
+msgid "Don't see your device?"
+msgstr "デバイスが表示されませんか？"
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr "デスクトップ環境のものではなく、Spotify独自のタイトルバーとウインドウボタンを表示します。"
+
+
+msgid "Enter full screen"
+msgstr "全画面表示"
+
+
+msgid "Expand Your Library"
+msgstr "マイライブラリを展開"
+
+
+msgid "Friend Activity"
+msgstr "友達のアクティビティ"
+
+
+msgid "Go back"
+msgstr "戻る"
+
+
+msgid "Go forward"
+msgstr "進む"
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr "Spotifyアプリの「設定」＞「再生履歴とインサイト」で再生の共有を管理できます。"
+
+
+msgid "Hide"
+msgstr "非表示"
+
+
+msgid "Jam"
+msgstr "Jam"
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr "Spotifyの友達やフォロワーに、聴いている曲を共有しましょう。"
+
+
+msgid "Listen now"
+msgstr "今すぐ聴く"
+
+
+msgid "Listen together from anywhere"
+msgstr "どこからでも一緒に聴こう"
+
+
+msgid "Listening activity"
+msgstr "再生履歴の共有"
+
+
+msgid "Lyrics preview"
+msgstr "歌詞プレビュー"
+
+
+msgid "Made for"
+msgstr "おすすめの対象："
+
+
+msgid "Menu"
+msgstr "メニュー"
+
+
+msgid "Mixed playlist"
+msgstr "ミックスプレイリスト"
+
+
+msgid "More options"
+msgstr "その他のオプション"
+
+
+msgid "Music"
+msgstr "音楽"
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr "Spotifyを再起動すると、このコンピューターで再生中の音楽は停止します。"
+
+
+msgid "Music video"
+msgstr "ミュージックビデオ"
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr "新着情報はここに表示されます。お気に入りのアーティストやポッドキャストをフォローしましょう。"
+
+
+msgid "No other devices found"
+msgstr "他のデバイスが見つかりません"
+
+
+msgid "On other networks"
+msgstr "他のネットワーク"
+
+
+msgid "Open Miniplayer"
+msgstr "ミニプレーヤーを開く"
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr "再生にはSpotify Premiumが必要です。Freeアカウントでは閲覧と検索はできますが、Spotifyで音楽を再生することはできません。"
+
+
+msgid "Podcasts and shows"
+msgstr "ポッドキャストと番組"
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr "人気の曲とあなたへのおすすめ。"
+
+
+msgid "Popular songs and trending stations"
+msgstr "人気の曲と話題のステーション"
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr "Spotifyはこのクライアントに友達の実際のアクティビティを提供していません。"
+
+
+msgid "Related music videos"
+msgstr "関連ミュージックビデオ"
+
+
+msgid "Reset"
+msgstr "リセット"
+
+
+msgid "Saved & downloaded"
+msgstr "保存済み・ダウンロード済み"
+
+
+msgid "Show all"
+msgstr "すべて表示"
+
+
+msgid "Show more"
+msgstr "もっと見る"
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr "ブラウザでログインします。Spotifyがパスワードを見ることはありません。ローカル再生にはSpotify Premiumが必要です。"
+
+
+msgid "Song"
+msgstr "曲"
+
+
+msgid "Spacious"
+msgstr "ゆったり"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr "Spotifyはシステムトレイに隠れます。トレイメニューまたはCmd+Qで終了できます。"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr "Spotifyはシステムトレイに隠れます。トレイメニューまたはCtrl+Qで終了できます。"
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr "Spotifyの標準の接続は、Spotifyのリクエスト上限をほかのリスナーと共有しています。混雑すると、音楽の読み込みや再生操作に時間がかかることがあります。"
+
+
+msgid "Standard grid"
+msgstr "標準グリッド"
+
+
+msgid "Standard list"
+msgstr "標準リスト"
+
+
+msgid "Start a Jam"
+msgstr "Jamを開始"
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr "フォローしているアーティストやポッドキャスト、番組の新着情報。"
+
+
+msgid "There are no new releases for you right now."
+msgstr "現在、新着情報はありません。"
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr "これらの機能はSpotifyからこのクライアントには提供されていません。"
+
+
+msgid "This computer"
+msgstr "このコンピューター"
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr "このデバイスの音量は Spotify から変更できません"
+
+
+msgid "What's New"
+msgstr "新着情報"
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr "Cmd+-またはCmd++でもズームを変更できます。"
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr "Ctrl+-またはCtrl++でもズームを変更できます。"
+
+
+msgid "Your Episodes"
+msgstr "マイエピソード"
+
+
+msgid "Your Library"
+msgstr "マイライブラリ"
+
+
+msgid "Zoom level"
+msgstr "ズームレベル"
+
+
+msgid "Bass Booster"
+msgstr "低音ブースト"
+
+
+msgid "Bass Reducer"
+msgstr "低音を抑える"
+
+
+msgid "Classical"
+msgstr "クラシック"
+
+
+msgid "Club"
+msgstr "クラブ"
+
+
+msgid "Custom"
+msgstr "カスタム"
+
+
+msgid "Dance"
+msgstr "ダンス"
+
+
+msgid "Flat"
+msgstr "フラット"
+
+
+msgid "Full Bass"
+msgstr "低音強調"
+
+
+msgid "Full Bass & Treble"
+msgstr "低音・高音強調"
+
+
+msgid "Full Treble"
+msgstr "高音強調"
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr "ノートPCのスピーカー／ヘッドホン"
+
+
+msgid "Large Hall"
+msgstr "大ホール"
+
+
+msgid "Live"
+msgstr "ライブ"
+
+
+msgid "Loudness"
+msgstr "ラウドネス"
+
+
+msgid "Night Listening"
+msgstr "夜間リスニング"
+
+
+msgid "Party"
+msgstr "パーティー"
+
+
+msgid "Pop"
+msgstr "ポップ"
+
+
+msgid "Recents"
+msgstr "最近"
+
+
+msgid "Reggae"
+msgstr "レゲエ"
+
+
+msgid "Rock"
+msgstr "ロック"
+
+
+msgid "Ska"
+msgstr "スカ"
+
+
+msgid "Small Speakers"
+msgstr "小型スピーカー"
+
+
+msgid "Soft"
+msgstr "ソフト"
+
+
+msgid "Soft Rock"
+msgstr "ソフトロック"
+
+
+msgid "Sort by"
+msgstr "並べ替え"
+
+
+msgid "Spoken Word"
+msgstr "音声"
+
+
+msgid "Techno"
+msgstr "テクノ"
+
+
+msgid "Treble Booster"
+msgstr "高音ブースト"
+
+
+msgid "View as"
+msgstr "表示形式"
+
+
+msgid "Vocal Booster"
+msgstr "ボーカル強調"
+
+
+msgid "Show Now Playing view"
+msgstr "再生中の画面を表示"
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr "友達の音楽の好みを1つのプレイリストに"
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr "曲やエピソードでプレイリストを作成"
+
+
+msgid "Mix songs with smooth transitions"
+msgstr "スムーズなつなぎで曲をミックス"
+
+
+msgid "Organize your playlists"
+msgstr "プレイリストを整理"
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr "アーティスト情報"
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr "クレジット"
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr "次に再生"
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr "再生待ちを開く"
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr "クレジットを表示"

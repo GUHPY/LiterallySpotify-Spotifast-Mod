@@ -116,7 +116,7 @@ struct Hook {
 
 /// Where the hook hangs on the window.
 fn property() -> *const u16 {
-    windows_sys::w!("SpotifastThumbBar")
+    windows_sys::w!("SpotifyThumbBar")
 }
 
 /// The toolbar under one window's taskbar preview.

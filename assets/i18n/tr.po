@@ -3349,3 +3349,448 @@ msgstr ""
 #~ msgid "Spotify does not let apps remove one queued song."
 #~ msgstr ""
 #~ "Spotify uygulamaların sıradan tek bir şarkıyı kaldırmasına izin vermiyor."
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr "Spotify'ı tercihlerine ve ihtiyaçlarına uyarlamak için yakınlaştırma düzeyini ayarla."
+
+
+msgid "All"
+msgstr "Tümü"
+
+
+msgid "Alphabetical"
+msgstr "Alfabetik"
+
+
+msgid "Audiobooks"
+msgstr "Sesli kitaplar"
+
+
+msgid "Blend"
+msgstr "Blend"
+
+
+msgid "Browse"
+msgstr "Göz at"
+
+
+msgid "Clear recent searches"
+msgstr "Son aramaları temizle"
+
+
+msgid "Collapse Your Library"
+msgstr "Kitaplığını daralt"
+
+
+msgid "Compact grid"
+msgstr "Kompakt ızgara"
+
+
+msgid "Compact list"
+msgstr "Kompakt liste"
+
+
+msgid "Connect"
+msgstr "Bağlan"
+
+
+msgid "Creator"
+msgstr "Oluşturan"
+
+
+msgid "Default"
+msgstr "Varsayılan"
+
+
+msgid "Dense"
+msgstr "Yoğun"
+
+
+msgid "Don't see your device?"
+msgstr "Cihazını göremiyor musun?"
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr "Masaüstü ortamının başlık çubuğu ve pencere düğmeleri yerine Spotify'in kendi başlık çubuğunu ve pencere düğmelerini çizer."
+
+
+msgid "Enter full screen"
+msgstr "Tam ekrana geç"
+
+
+msgid "Expand Your Library"
+msgstr "Kitaplığını genişlet"
+
+
+msgid "Friend Activity"
+msgstr "Arkadaş etkinliği"
+
+
+msgid "Go back"
+msgstr "Geri"
+
+
+msgid "Go forward"
+msgstr "İleri"
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr "Dinleme etkinliğini Spotify uygulamasında Ayarlar > Dinleme etkinliği ve istatistikler bölümünden yönet."
+
+
+msgid "Hide"
+msgstr "Gizle"
+
+
+msgid "Jam"
+msgstr "Jam"
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr "Spotify'daki arkadaşların ve takipçilerin ne dinlediğini görsün."
+
+
+msgid "Listen now"
+msgstr "Şimdi dinle"
+
+
+msgid "Listen together from anywhere"
+msgstr "Her yerden birlikte dinleyin"
+
+
+msgid "Listening activity"
+msgstr "Dinleme etkinliği"
+
+
+msgid "Lyrics preview"
+msgstr "Şarkı sözü önizlemesi"
+
+
+msgid "Made for"
+msgstr "Senin için:"
+
+
+msgid "Menu"
+msgstr "Menü"
+
+
+msgid "Mixed playlist"
+msgstr "Mikslenmiş çalma listesi"
+
+
+msgid "More options"
+msgstr "Diğer seçenekler"
+
+
+msgid "Music"
+msgstr "Müzik"
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr "Spotify yeniden başlatıldığında bu bilgisayarda çalan müzik duracak."
+
+
+msgid "Music video"
+msgstr "Müzik videosu"
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr "Yeni yayınlar burada görünecek. Güncel kalmak için sevdiğin sanatçıları ve podcast'leri takip et."
+
+
+msgid "No other devices found"
+msgstr "Başka cihaz bulunamadı"
+
+
+msgid "On other networks"
+msgstr "Diğer ağlarda"
+
+
+msgid "Open Miniplayer"
+msgstr "Mini oynatıcıyı aç"
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr "Çalma için Spotify Premium gerekir. Ücretsiz hesaplar göz atabilir ve arayabilir, ancak Spotify üzerinden müzik çalamaz."
+
+
+msgid "Podcasts and shows"
+msgstr "Podcast'ler ve programlar"
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr "Senin için seçilen popüler şarkılar ve öneriler."
+
+
+msgid "Popular songs and trending stations"
+msgstr "Popüler şarkılar ve trend istasyonlar"
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr "Spotify bu istemciye gerçek arkadaş etkinliğini sağlamıyor."
+
+
+msgid "Related music videos"
+msgstr "İlgili müzik videoları"
+
+
+msgid "Reset"
+msgstr "Sıfırla"
+
+
+msgid "Saved & downloaded"
+msgstr "Kaydedilenler ve indirilenler"
+
+
+msgid "Show all"
+msgstr "Tümünü göster"
+
+
+msgid "Show more"
+msgstr "Daha fazla göster"
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr "Tarayıcınız üzerinden giriş yapın. Spotify parolanızı asla görmez. Yerel çalma için Spotify Premium gerekir."
+
+
+msgid "Song"
+msgstr "Şarkı"
+
+
+msgid "Spacious"
+msgstr "Geniş"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr "Spotify sistem tepsisine gizlenir. Tepsi menüsünden veya Cmd+Q ile çıkın."
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr "Spotify sistem tepsisine gizlenir. Tepsi menüsünden veya Ctrl+Q ile çıkın."
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr "Spotify'in varsayılan bağlantısı, Spotify'ın istek limitini diğer dinleyicilerle paylaşır. Yoğunlaştığında, müzik yüklemek ve çalma kontrollerini kullanmak daha uzun sürebilir."
+
+
+msgid "Standard grid"
+msgstr "Standart ızgara"
+
+
+msgid "Standard list"
+msgstr "Standart liste"
+
+
+msgid "Start a Jam"
+msgstr "Jam başlat"
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr "Takip ettiğin sanatçı, podcast ve programların son yayınları."
+
+
+msgid "There are no new releases for you right now."
+msgstr "Şu an senin için yeni yayın yok."
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr "Spotify bu özellikleri bu istemciye sunmuyor."
+
+
+msgid "This computer"
+msgstr "Bu bilgisayar"
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr "Bu cihazın ses düzeyi Spotify üzerinden değiştirilemez"
+
+
+msgid "What's New"
+msgstr "Yenilikler"
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr "Yakınlaştırmayı Cmd+- veya Cmd++ ile de değiştirebilirsin."
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr "Yakınlaştırmayı Ctrl+- veya Ctrl++ ile de değiştirebilirsin."
+
+
+msgid "Your Episodes"
+msgstr "Bölümlerin"
+
+
+msgid "Your Library"
+msgstr "Kitaplığın"
+
+
+msgid "Zoom level"
+msgstr "Yakınlaştırma düzeyi"
+
+
+msgid "Bass Booster"
+msgstr "Bas güçlendirici"
+
+
+msgid "Bass Reducer"
+msgstr "Bas azaltıcı"
+
+
+msgid "Classical"
+msgstr "Klasik"
+
+
+msgid "Club"
+msgstr "Kulüp"
+
+
+msgid "Custom"
+msgstr "Özel"
+
+
+msgid "Dance"
+msgstr "Dans"
+
+
+msgid "Flat"
+msgstr "Düz"
+
+
+msgid "Full Bass"
+msgstr "Yoğun bas"
+
+
+msgid "Full Bass & Treble"
+msgstr "Yoğun bas ve tiz"
+
+
+msgid "Full Treble"
+msgstr "Yoğun tiz"
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr "Dizüstü hoparlörleri / Kulaklık"
+
+
+msgid "Large Hall"
+msgstr "Büyük salon"
+
+
+msgid "Live"
+msgstr "Canlı"
+
+
+msgid "Loudness"
+msgstr "Ses yüksekliği"
+
+
+msgid "Night Listening"
+msgstr "Gece dinleme"
+
+
+msgid "Party"
+msgstr "Parti"
+
+
+msgid "Pop"
+msgstr "Pop"
+
+
+msgid "Recents"
+msgstr "Son dinlenenler"
+
+
+msgid "Reggae"
+msgstr "Reggae"
+
+
+msgid "Rock"
+msgstr "Rock"
+
+
+msgid "Ska"
+msgstr "Ska"
+
+
+msgid "Small Speakers"
+msgstr "Küçük hoparlörler"
+
+
+msgid "Soft"
+msgstr "Yumuşak"
+
+
+msgid "Soft Rock"
+msgstr "Yumuşak rock"
+
+
+msgid "Sort by"
+msgstr "Sıralama ölçütü"
+
+
+msgid "Spoken Word"
+msgstr "Konuşma"
+
+
+msgid "Techno"
+msgstr "Tekno"
+
+
+msgid "Treble Booster"
+msgstr "Tiz güçlendirici"
+
+
+msgid "View as"
+msgstr "Görünüm"
+
+
+msgid "Vocal Booster"
+msgstr "Vokal güçlendirici"
+
+
+msgid "Show Now Playing view"
+msgstr "Şu an çalan görünümünü göster"
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr "Arkadaşlarının müzik zevklerini tek çalma listesinde birleştir"
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr "Şarkılar veya bölümlerle çalma listesi oluştur"
+
+
+msgid "Mix songs with smooth transitions"
+msgstr "Şarkıları yumuşak geçişlerle miksle"
+
+
+msgid "Organize your playlists"
+msgstr "Çalma listelerini düzenle"
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr "Sanatçı hakkında"
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr "Katkıda bulunanlar"
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr "Sıradaki"
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr "Sırayı aç"
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr "Katkıda bulunanları gör"

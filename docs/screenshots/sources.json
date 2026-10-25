@@ -1,0 +1,19 @@
+{
+  "captured": "2026-10-25",
+  "mod": {
+    "version": "0.1.0",
+    "live": "mod/live-home.png",
+    "demo": "mod/demo-captures.json"
+  },
+  "original": {
+    "version": "0.14.1",
+    "source": "Official upstream portable release, authenticated in an isolated profile",
+    "file": "original/home.png"
+  },
+  "spotify": {
+    "version": "Windows Store package 1.305.3058.0",
+    "source": "Native official app, authenticated capture",
+    "file": "spotify/home-now-playing.png"
+  },
+  "note": "Live screenshots keep their original window dimensions. Demo screenshots use sample data, normally at 1600x900; mini-player windows have their own size."
+}

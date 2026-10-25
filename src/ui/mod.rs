@@ -24,13 +24,16 @@ mod update;
 pub mod widgets;
 pub mod winamp;
 
-use egui::{Align2, Color32, Context, CornerRadius, Frame, Id, Margin, Rect, Stroke, vec2};
+use egui::{Align, Align2, Color32, Context, CornerRadius, Frame, Id, Layout, Margin, Rect, Sense, Stroke, pos2, vec2};
 
 use crate::api::models::pick_image;
 use crate::app::App;
+use crate::i18n::gettext;
 use crate::backend::AuthStatus;
 use crate::model::{Action, Loadable, Page, ToastKind};
 use crate::theme::{self, Icon};
+
+pub(crate) const LYRICS_CHROME_VIS_ID: &str = "lyrics-chrome-vis";
 
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let ctx = ui.ctx().clone();
@@ -51,7 +54,39 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         fastframe_titlebar::resize(ui);
         return;
     }
-    if titlebar_spans_window(cfg!(target_os = "macos"), fastframe_titlebar::enabled()) {
+
+    // Track mouse movement/clicks/scroll for 1-second idle chrome retraction in Expanded Lyrics
+    let now_sec = ctx.input(|i| i.time);
+    let mouse_active = ctx.input(|i| {
+        i.pointer.delta().length_sq() > 0.25
+            || i.pointer.any_pressed()
+            || i.pointer.any_down()
+            || i.smooth_scroll_delta.length_sq() > 0.1
+    });
+    let last_active_id = Id::new("lyrics-last-mouse-active");
+    let mut last_active = ctx
+        .data(|d| d.get_temp::<f64>(last_active_id))
+        .unwrap_or(now_sec);
+    if mouse_active || app.lyrics_fullscreen.is_none() {
+        last_active = now_sec;
+        ctx.data_mut(|d| d.insert_temp(last_active_id, last_active));
+    }
+    let idle_secs = (now_sec - last_active).max(0.0);
+    if app.lyrics_fullscreen.is_some() && idle_secs < 1.08 {
+        ctx.request_repaint_after(std::time::Duration::from_millis(50));
+    }
+    let chrome_shown = app.lyrics_fullscreen.is_none() || idle_secs < 1.0;
+    let chrome_vis = ctx.animate_bool_with_time_and_easing(
+        Id::new("lyrics-chrome-anim"),
+        chrome_shown,
+        0.22,
+        egui::emath::easing::cubic_out,
+    );
+    ctx.data_mut(|d| d.insert_temp(Id::new(LYRICS_CHROME_VIS_ID), chrome_vis));
+
+    if chrome_vis > 0.05
+        && titlebar_spans_window(cfg!(target_os = "macos"), fastframe_titlebar::enabled())
+    {
         fastframe_titlebar::drag(
             ui,
             Rect::from_min_size(
@@ -64,38 +99,70 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         );
     }
     player_bar::show(app, ui);
-    if app.lyrics_fullscreen.is_some() {
-        lyrics::fullscreen(app, ui);
-    } else {
-        if app.settings.sidebar_visible {
-            sidebar::show(app, ui);
-        }
-        if app.show_queue_panel {
-            queue::side_panel(app, ui);
-        }
-        if app.show_lyrics_panel {
-            lyrics::side_panel(app, ui);
-        }
-        central(app, ui);
-        keep_room_for_panels(app, ctx);
+    if chrome_vis > 0.01 {
+        egui::Panel::top("global-nav")
+            .exact_size((theme::TOP_BAR_HEIGHT * chrome_vis).max(1.0))
+            .resizable(false)
+            .show_separator_line(false)
+            .frame(Frame::new().fill(app.palette.window))
+            .show(ui, |ui| {
+                if chrome_vis >= 0.35 {
+                    topbar::show(app, ui);
+                }
+            });
     }
+
+    let body_rect = ui.available_rect_before_wrap();
+    let cinema_t = ctx.animate_bool_with_time_and_easing(
+        Id::new("cinema-lyrics-slide-t"),
+        app.lyrics_fullscreen.is_some(),
+        0.26,
+        egui::emath::easing::cubic_out,
+    );
+
+    sidebar::show(app, ui);
+    right_bento_panel(app, ui);
+    central(app, ui);
+
+    if cinema_t > 0.001 {
+        let slide_x = (1.0 - cinema_t) * body_rect.width();
+        let cinema_pos = body_rect.min + vec2(slide_x, 0.0);
+        let cinema_rect = Rect::from_min_size(cinema_pos, body_rect.size());
+        egui::Area::new(Id::new("cinema-lyrics-slide-area"))
+            .order(egui::Order::Middle)
+            .movable(false)
+            .constrain(false)
+            .fixed_pos(cinema_pos)
+            .show(ctx, |ui| {
+                ui.set_clip_rect(body_rect);
+                ui.set_min_size(body_rect.size());
+                ui.painter()
+                    .rect_filled(cinema_rect, 0.0, app.palette.panel);
+                let mut content = ui.new_child(egui::UiBuilder::new().max_rect(cinema_rect));
+                content.set_clip_rect(body_rect.intersect(cinema_rect));
+                lyrics::fullscreen(app, &mut content);
+            });
+    }
+    keep_room_for_panels(app, ctx);
     devices::popup(app, ctx);
     dialogs::show(app, ctx);
     update::show(app, ctx);
     widgets::drag_ghost(ctx, &app.palette, app.locale);
-    toasts(app, ctx, theme::PLAYER_BAR_HEIGHT + 16.0);
-    caption_buttons(ui, &app.palette, app.locale);
+    toasts(app, ctx, (theme::PLAYER_BAR_HEIGHT * chrome_vis) + 16.0);
+    if chrome_vis > 0.35 {
+        caption_buttons(ui, &app.palette, app.locale);
+    }
     fastframe_titlebar::resize(ui);
 }
 
 /// The main window's narrowest width with these panels open: their least
 /// widths and the page's.
 fn main_min_width(page: f32, sidebar: bool, right_panel: bool) -> f32 {
-    let sidebar = if sidebar { SIDEBAR_MIN_WIDTH } else { 0.0 };
+    let sidebar = if sidebar { SIDEBAR_MIN_WIDTH } else { 72.0 };
     let right = if right_panel {
         theme::SIDE_PANEL_MIN_WIDTH
     } else {
-        0.0
+        36.0
     };
     (sidebar + right + page).max(crate::window::MAIN_MIN_SIZE[0])
 }
@@ -113,20 +180,32 @@ fn keep_room_for_panels(app: &App, ctx: &Context) {
     }
     let width = main_min_width(
         topbar::least_width(ctx),
-        app.settings.sidebar_visible,
-        app.show_queue_panel || app.show_lyrics_panel,
+        app.settings.sidebar_visible && app.lyrics_fullscreen.is_none(),
+        app.lyrics_fullscreen.is_none()
+            && (app.show_queue_panel
+                || app.show_lyrics_panel
+                || app.show_devices
+                || app.show_friend_activity),
     )
     .round();
     let id = Id::new("main-min-width");
     let sent = ctx.data(|data| data.get_temp::<f32>(id));
-    // The window starts at MAIN_MIN_SIZE, so there is nothing to send until
-    // the panels need more.
     if sent.unwrap_or(crate::window::MAIN_MIN_SIZE[0]) != width {
         ctx.data_mut(|data| data.insert_temp(id, width));
         ctx.send_viewport_cmd(egui::ViewportCommand::MinInnerSize(vec2(
             width,
             crate::window::MAIN_MIN_SIZE[1],
         )));
+    }
+    let minimum = vec2(width, crate::window::MAIN_MIN_SIZE[1]);
+    if crate::window::main_window_needs_size_recovery(ctx) {
+        // Native restore can bypass the tracking minimum while dragging a maximized window.
+        let restored = app
+            .window_geometry
+            .size
+            .filter(|size| size.iter().all(|side| side.is_finite()))
+            .map_or(minimum, |size| egui::Vec2::from(size) / ctx.zoom_factor());
+        ctx.send_viewport_cmd(egui::ViewportCommand::InnerSize(restored.max(minimum)));
     }
 }
 
@@ -139,12 +218,6 @@ pub(crate) struct PanelFit {
     pub yielding: bool,
 }
 
-/// Fit a side panel between `range` and the page beside it. The panel gives
-/// up width, down to its minimum, so the page keeps `room_for_page`, the
-/// least its top bar needs (#624). The width chosen for the panel stays in
-/// the settings and comes back once the window widens again.
-///
-/// `room` is what the panel and everything after it share.
 pub(crate) fn yielding_panel(
     ctx: &Context,
     id: &str,
@@ -155,8 +228,6 @@ pub(crate) fn yielding_panel(
     let (min, max) = range.into_inner();
     let max = max.min(room).max(min);
     let width = chosen.clamp(min, max);
-    // egui remembers the width the panel last drew at, a clamped one too.
-    // Hand it back the chosen width whenever there is room for more.
     let id = Id::new(id);
     if let Some(mut state) = egui::containers::panel::PanelState::load(ctx, id)
         && state.outer_rect.width() + 0.5 < width
@@ -170,16 +241,10 @@ pub(crate) fn yielding_panel(
     }
 }
 
-/// Whether a panel's new width is one the person chose: it moved while not
-/// held back by the page, or by their own drag.
 pub(crate) fn panel_width_chosen(ctx: &Context, id: &str, fit: &PanelFit) -> bool {
     !fit.yielding || ctx.is_being_dragged(Id::new(id).with("__resize"))
 }
 
-/// Keeps the most recent loading preview of each metadata type available to
-/// the loaded hero as an artwork fallback. The fixed typed slot bounds this to
-/// one playlist, album, artist, and show instead of scanning known metadata on
-/// every loaded frame.
 fn loading_preview<T>(
     ctx: &Context,
     key: &str,
@@ -207,8 +272,26 @@ where
     }
 }
 
-fn page_tint(app: &mut App) -> Option<Color32> {
+fn page_tint(app: &mut App, ctx: &egui::Context) -> Option<Color32> {
     let page = app.page().clone();
+    if page == Page::Home {
+        let target = ctx
+            .data(|data| data.get_temp::<Color32>(Id::new(home::HOME_HOVER_TINT_ID)))
+            .unwrap_or(Color32::from_rgb(0x50, 0x38, 0xc8));
+        let channel = |axis, value: u8| {
+            ctx.animate_value_with_time(
+                Id::new(("home-tint-channel", axis)),
+                f32::from(value),
+                crate::motion::seconds(ctx, 0.3),
+            )
+            .round() as u8
+        };
+        return Some(Color32::from_rgb(
+            channel("r", target.r()),
+            channel("g", target.g()),
+            channel("b", target.b()),
+        ));
+    }
     let image = match &page {
         Page::Playlist(id) => app
             .playlist_pages
@@ -256,35 +339,629 @@ fn page_tint(app: &mut App) -> Option<Color32> {
     }
 }
 
-fn central(app: &mut App, ui: &mut egui::Ui) {
+fn paint_corner_cutouts(ui: &egui::Ui, rect: Rect, left: bool, color: Color32) {
+    let radius = theme::RADIUS as f32;
+    let inward = if left { 1.0 } else { -1.0 };
+    let edge = if left { rect.left() } else { rect.right() };
+    for (y, direction) in [(rect.top(), 1.0), (rect.bottom(), -1.0)] {
+        let corner = pos2(edge, y);
+        let center = corner + vec2(inward * radius, direction * radius);
+        let mut mesh = egui::Mesh::default();
+        mesh.colored_vertex(corner, color);
+        for step in 0..=12 {
+            let angle = std::f32::consts::FRAC_PI_2 * step as f32 / 12.0;
+            mesh.colored_vertex(
+                center
+                    + vec2(
+                        -inward * radius * angle.sin(),
+                        -direction * radius * angle.cos(),
+                    ),
+                color,
+            );
+            if step > 0 {
+                mesh.add_triangle(0, step, step + 1);
+            }
+        }
+        ui.painter().add(egui::Shape::mesh(mesh));
+    }
+}
+
+#[cfg(test)]
+mod corner_cutout_tests {
+    use super::*;
+
+    #[test]
+    fn corner_cutouts_cover_the_outside_of_each_rounded_edge() {
+        let ctx = Context::default();
+        let rect = Rect::from_min_max(pos2(100.0, 100.0), pos2(200.0, 300.0));
+        let radius = theme::RADIUS as f32;
+        for left in [false, true] {
+            let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
+                paint_corner_cutouts(ui, rect, left, Color32::BLACK);
+            });
+            let meshes: Vec<_> = output
+                .shapes
+                .iter()
+                .filter_map(|shape| match &shape.shape {
+                    egui::Shape::Mesh(mesh) => Some(mesh),
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(meshes.len(), 2);
+            let inside_triangle = |p: egui::Pos2, a: egui::Pos2, b: egui::Pos2, c: egui::Pos2| {
+                let cross = |u: egui::Vec2, v: egui::Vec2| u.x * v.y - u.y * v.x;
+                let d = [
+                    cross(b - a, p - a),
+                    cross(c - b, p - b),
+                    cross(a - c, p - c),
+                ];
+                cross(b - a, c - a).abs() > 0.0001
+                    && (d.iter().all(|d| *d >= -0.001) || d.iter().all(|d| *d <= 0.001))
+            };
+            for (mesh, (y, direction)) in meshes
+                .iter()
+                .zip([(rect.top(), 1.0), (rect.bottom(), -1.0)])
+            {
+                assert!(mesh.is_valid());
+                assert!(
+                    mesh.vertices
+                        .iter()
+                        .all(|vertex| vertex.color == Color32::BLACK)
+                );
+                let inward = if left { 1.0 } else { -1.0 };
+                let edge = if left { rect.left() } else { rect.right() };
+                let center = pos2(edge + inward * radius, y + direction * radius);
+                for dx in 0..theme::RADIUS {
+                    for dy in 0..theme::RADIUS {
+                        let point = pos2(
+                            edge + inward * (f32::from(dx) + 0.5),
+                            y + direction * (f32::from(dy) + 0.5),
+                        );
+                        let outside = (point - center).length_sq() - radius * radius;
+                        if outside.abs() < 0.5 {
+                            continue;
+                        }
+                        let covered = mesh.indices.as_chunks::<3>().0.iter().any(|triangle| {
+                            inside_triangle(
+                                point,
+                                mesh.vertices[triangle[0] as usize].pos,
+                                mesh.vertices[triangle[1] as usize].pos,
+                                mesh.vertices[triangle[2] as usize].pos,
+                            )
+                        });
+                        assert_eq!(
+                            covered,
+                            outside > 0.0,
+                            "wrong corner coverage at {point:?}, left={left}"
+                        );
+                    }
+                }
+            }
+            output.textures_delta.clear();
+        }
+    }
+}
+
+fn collapsed_bento_rect(body: Rect, hover_t: f32) -> Rect {
+    Rect::from_min_max(
+        pos2(body.right() - (32.0 + 16.0 * hover_t), body.top()),
+        body.max,
+    )
+}
+
+/// Official Spotify retracted Right Bento Strip (`Tela Tocando Agora` collapsed).
+/// Shows a theme-colored rounded strip over the central content with `<` (`ChevronLeft`).
+/// On hover, the strip and its black gap overlay the fixed central panel, revealing a dimmed preview of the
+/// Now Playing View content behind a bright `<` button (`"Mostrar a tela Tocando agora"`).
+/// Unified Right Bento Panel (Now Playing View, Queue, Connect Devices, Friend Activity, and Collapsed Strip).
+pub fn right_bento_panel(app: &mut App, ui: &mut egui::Ui) {
+    let ctx = ui.ctx().clone();
     let palette = app.palette;
-    let tint = page_tint(app);
-    egui::CentralPanel::default()
-        .frame(Frame::new().fill(palette.window))
+
+    let is_overlay = app.show_devices || app.show_queue_panel || app.show_friend_activity;
+    let is_expanded = is_overlay || app.show_lyrics_panel;
+
+    if app.lyrics_fullscreen.is_some() {
+        return;
+    }
+
+    let expand_t = ctx.animate_bool_with_time_and_easing(
+        Id::new("right-bento-expand-t"),
+        is_expanded,
+        0.22,
+        egui::emath::easing::cubic_out,
+    );
+
+    let chosen_width = app.settings.lyrics_width.clamp(340.0, 520.0);
+    app.settings.queue_width = chosen_width;
+
+    let hover_anim_id = Id::new("npv-collapsed-hover-anim");
+    let last_strip_rect_id = Id::new("npv-collapsed-strip-last-rect");
+    let last_strip_rect: Option<Rect> = ctx.data(|d| d.get_temp(last_strip_rect_id));
+
+    let is_strip_hovered = if !is_expanded {
+        if let Some(r) = last_strip_rect {
+            ctx.input(|i| i.pointer.hover_pos().is_some_and(|pos| r.contains(pos)))
+        } else if let Some(pos) = ctx.input(|i| i.pointer.hover_pos()) {
+            let screen = ctx.input(|i| i.viewport_rect());
+            pos.x >= screen.right() - 32.0 - theme::PANEL_GAP
+                && pos.x <= screen.right()
+                && pos.y >= theme::top_bar_height()
+                && pos.y <= screen.bottom() - theme::PLAYER_BAR_HEIGHT
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    let hover_t = ctx.animate_bool_with_time_and_easing(
+        hover_anim_id,
+        is_strip_hovered,
+        0.24,
+        egui::emath::easing::quadratic_out,
+    );
+    ctx.data_mut(|d| d.insert_temp(hover_anim_id, hover_t));
+
+    let panel_width = chosen_width * expand_t;
+
+    let is_fully_expanded = expand_t >= 0.999;
+    let outer_rect = ui.available_rect_before_wrap();
+    if expand_t <= 0.02 {
+        let rect = collapsed_bento_rect(outer_rect, hover_t);
+        let overlay_rect =
+            Rect::from_min_max(pos2(rect.left() - theme::PANEL_GAP, rect.top()), rect.max);
+        ctx.data_mut(|d| d.insert_temp(last_strip_rect_id, overlay_rect));
+        egui::Area::new(Id::new("collapsed-right-bento-overlay"))
+            .order(egui::Order::Foreground)
+            .movable(false)
+            .constrain(false)
+            .fixed_pos(overlay_rect.min)
+            .show(&ctx, |ui| {
+                ui.set_min_size(overlay_rect.size());
+                ui.set_clip_rect(overlay_rect.expand2(vec2(theme::RADIUS as f32, 0.0)));
+                // The separator travels with the strip and covers the central card beneath it.
+                let gap_rect =
+                    Rect::from_min_max(overlay_rect.min, pos2(rect.left(), rect.bottom()));
+                ui.painter().rect_filled(gap_rect, 0.0, palette.window);
+                paint_corner_cutouts(
+                    ui,
+                    Rect::from_min_max(
+                        outer_rect.min,
+                        pos2(overlay_rect.left(), outer_rect.bottom()),
+                    ),
+                    false,
+                    palette.window,
+                );
+
+                let resp = ui.interact(rect, Id::new("collapsed-right-bento-open"), Sense::click());
+                ui.set_clip_rect(rect);
+
+                ui.painter().rect_filled(
+                    rect,
+                    CornerRadius {
+                        nw: theme::RADIUS,
+                        ne: 0,
+                        sw: theme::RADIUS,
+                        se: 0,
+                    },
+                    palette.panel,
+                );
+
+                // 2. Faint Now Playing View preview on hover (~18% opacity)
+                if hover_t > 0.01 && app.now_playing().is_some() {
+                    let preview_rect = Rect::from_min_size(
+                        pos2(rect.left(), rect.top()),
+                        vec2(chosen_width, rect.height()),
+                    );
+                    let mut preview_ui = ui.new_child(
+                        egui::UiBuilder::new()
+                            .max_rect(preview_rect)
+                            .layout(Layout::top_down(Align::Min)),
+                    );
+                    preview_ui.set_clip_rect(rect);
+                    preview_ui.disable();
+                    preview_ui.set_opacity(hover_t * 0.18);
+                    lyrics::now_playing_view_content(app, &mut preview_ui);
+                }
+
+                // Clear the corners after the preview so its artwork cannot leak through.
+                paint_corner_cutouts(ui, rect, true, palette.window);
+
+                // 3. Bare chevron icon centered over the strip
+                let icon_color = blend(palette.secondary, palette.text, hover_t);
+                let icon_rect = Rect::from_center_size(rect.center(), vec2(16.0, 16.0));
+                theme::paint_icon(ui, Icon::ChevronLeft, icon_rect, 16.0, icon_color);
+
+                if resp.hovered() {
+                    ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                }
+
+                let tooltip = gettext(app.locale, "Show Now Playing view");
+                if resp.on_hover_text(tooltip.as_ref()).clicked() {
+                    app.show_lyrics_panel = true;
+                }
+            });
+        return;
+    }
+
+    let mut panel = egui::Panel::right("unified-right-bento")
+        .show_separator_line(false)
+        .frame(Frame::new().fill(palette.window).inner_margin(Margin {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+        }));
+
+    if is_fully_expanded {
+        panel = panel
+            .resizable(true)
+            .size_range(340.0..=520.0)
+            .default_size(chosen_width);
+    } else {
+        ctx.data_mut(|d| {
+            d.remove::<egui::containers::panel::PanelState>(Id::new("unified-right-bento"))
+        });
+        panel = panel.exact_size(panel_width).resizable(false);
+    }
+
+    let response = panel.show(ui, |ui| {
+        let outer_rect = ui.available_rect_before_wrap();
+        ui.ctx().data_mut(|d| d.remove::<Rect>(last_strip_rect_id));
+        Frame::new()
+            .fill(palette.panel)
+            .corner_radius(CornerRadius {
+                nw: theme::RADIUS,
+                ne: 0,
+                sw: theme::RADIUS,
+                se: 0,
+            })
+            .show(ui, |ui| {
+                ui.set_min_size(outer_rect.size());
+                ui.set_max_size(outer_rect.size());
+                ui.set_clip_rect(outer_rect);
+
+                // Fixed-width content pinned to outer_rect.left():
+                // As the panel collapses from chosen_width to 36px, the content smoothly slides off to the right!
+                let content_rect = Rect::from_min_size(
+                    pos2(outer_rect.left(), outer_rect.top()),
+                    vec2(chosen_width, outer_rect.height()),
+                );
+
+                let overlay_t = ctx.animate_bool_with_time_and_easing(
+                    Id::new("right-bento-overlay-t"),
+                    is_overlay,
+                    0.22,
+                    egui::emath::easing::cubic_out,
+                );
+
+                let mut content_ui = ui.new_child(
+                    egui::UiBuilder::new()
+                        .max_rect(content_rect)
+                        .layout(Layout::top_down(Align::Min)),
+                );
+                content_ui.set_clip_rect(outer_rect);
+
+                if overlay_t <= 0.001 {
+                    lyrics::now_playing_view_content(app, &mut content_ui);
+                } else if overlay_t >= 0.999 {
+                    render_overlay_content(app, &mut content_ui);
+                } else {
+                    // In transition: base Now Playing View in background
+                    {
+                        let mut base_ui = content_ui.new_child(
+                            egui::UiBuilder::new()
+                                .max_rect(content_rect)
+                                .layout(Layout::top_down(Align::Min)),
+                        );
+                        base_ui.set_clip_rect(outer_rect);
+                        lyrics::now_playing_view_content(app, &mut base_ui);
+                    }
+                    // Overlay slides up from bottom
+                    let slide_y = (1.0 - overlay_t) * content_rect.height();
+                    let overlay_rect = content_rect.translate(vec2(0.0, slide_y));
+                    let mut overlay_ui = content_ui.new_child(
+                        egui::UiBuilder::new()
+                            .max_rect(overlay_rect)
+                            .layout(Layout::top_down(Align::Min)),
+                    );
+                    overlay_ui.set_clip_rect(outer_rect);
+                    overlay_ui.painter().rect_filled(
+                        overlay_rect,
+                        CornerRadius::same(theme::RADIUS),
+                        palette.panel,
+                    );
+                    render_overlay_content(app, &mut overlay_ui);
+                }
+            });
+    });
+
+    let is_resizing = ctx.is_being_dragged(Id::new("unified-right-bento").with("__resize"));
+    if is_fully_expanded && is_resizing {
+        let actual_width = response.response.rect.width();
+        let clamped = actual_width.clamp(340.0, 520.0);
+        if (clamped - app.settings.lyrics_width).abs() > 0.5 {
+            app.settings.lyrics_width = clamped;
+            app.settings.queue_width = clamped;
+        }
+    } else if is_fully_expanded && ctx.input(|i| i.pointer.any_released()) {
+        app.actions.push(Action::SettingsChanged);
+    }
+}
+
+fn render_overlay_content(app: &mut App, ui: &mut egui::Ui) {
+    Frame::new()
+        .inner_margin(Margin {
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: 16,
+        })
         .show(ui, |ui| {
-            let rect = ui.max_rect();
+            if app.show_devices {
+                devices::content(app, ui);
+            } else if app.show_queue_panel {
+                queue::content(app, ui);
+            } else if app.show_friend_activity {
+                friend_activity_content(app, ui);
+            }
+        });
+}
+
+pub fn friend_activity_content(app: &mut App, ui: &mut egui::Ui) {
+    let palette = app.palette;
+    let locale = app.locale;
+    ui.horizontal(|ui| {
+        theme::text(
+            ui,
+            gettext(locale, "Listening activity"),
+            theme::bold(16.0),
+            palette.text,
+        );
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            if theme::icon_button(
+                ui,
+                Icon::X,
+                16.0,
+                palette.secondary,
+                palette.text,
+                &gettext(locale, "Close"),
+            )
+            .clicked()
+            {
+                app.actions.push(Action::ToggleFriendActivity);
+            }
+        });
+    });
+    ui.add_space(32.0);
+    Frame::new().inner_margin(Margin::symmetric(16, 0)).show(ui, |ui| {
+        ui.add(egui::Label::new(egui::RichText::new(gettext(locale, "Let your friends and followers on Spotify see what you're listening to.")).font(theme::medium(14.0)).color(palette.secondary)).wrap());
+        ui.add_space(18.0);
+        for index in 0..3 {
+            ui.horizontal(|ui| {
+                let (avatar, _) = ui.allocate_exact_size(vec2(48.0, 48.0), Sense::hover());
+                ui.painter().circle_filled(avatar.center(), 24.0, palette.surface_hover);
+                if index == 0 {
+                    theme::paint_icon(ui, Icon::User, avatar.shrink(12.0), 24.0, palette.secondary);
+                }
+                if index < 2 {
+                    ui.painter().circle_filled(pos2(avatar.right() - 4.0, avatar.top() + 4.0), 4.0, Color32::from_rgb(45, 126, 221));
+                }
+                ui.add_space(4.0);
+                ui.vertical(|ui| {
+                    ui.add_space(6.0);
+                    for width in [80.0, 62.0, 62.0] {
+                        let (line, _) = ui.allocate_exact_size(vec2(width, 7.0), Sense::hover());
+                        ui.painter().rect_filled(line, 4.0, palette.surface_hover);
+                    }
+                });
+            });
+            ui.add_space(12.0);
+        }
+        ui.add(egui::Label::new(egui::RichText::new(gettext(locale, "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity.")).font(theme::medium(14.0)).color(palette.secondary)).wrap());
+        ui.add_space(8.0);
+        ui.add(egui::Label::new(egui::RichText::new(gettext(locale, "Real friend activity is not available to this client through Spotify.")).font(theme::regular(12.0)).color(palette.secondary)).wrap());
+        ui.add_space(18.0);
+        ui.vertical_centered(|ui| {
+            if ui.add(egui::Button::new(egui::RichText::new(gettext(locale, "Settings"))
+                .font(theme::semibold(14.0)).color(palette.window))
+                .fill(palette.text).stroke(Stroke::NONE).corner_radius(24.0)
+                .min_size(vec2(158.0, 48.0))).clicked() {
+                app.actions.push(Action::OpenUrl("https://support.spotify.com/article/listening-activity/".into()));
+            }
+        });
+    });
+}
+
+fn whats_new_page(app: &mut App, ui: &mut egui::Ui) {
+    let palette = app.palette;
+    let filter_id = Id::new("whats-new-filter");
+    let mut filter = ui
+        .ctx()
+        .data(|d| d.get_temp::<u8>(filter_id))
+        .unwrap_or(0);
+
+    ui.add_space(8.0);
+    theme::text(ui, gettext(app.locale, "What's New"), theme::bold(32.0), palette.text);
+    ui.add_space(4.0);
+    theme::text(
+        ui,
+        gettext(app.locale, "The latest releases from artists, podcasts and shows you follow."),
+        theme::regular(14.0),
+        palette.secondary,
+    );
+    ui.add_space(16.0);
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 8.0;
+        for (idx, label) in [(1u8, gettext(app.locale, "Music")), (2u8, gettext(app.locale, "Podcasts and shows"))] {
+            let active = filter == idx;
+            if theme::pill_button(ui, &palette, &label, active).clicked() {
+                filter = if active { 0 } else { idx };
+                ui.ctx().data_mut(|d| d.insert_temp(filter_id, filter));
+            }
+        }
+    });
+    ui.add_space(72.0);
+    ui.vertical_centered(|ui| {
+        theme::text(
+            ui,
+            gettext(app.locale, "There are no new releases for you right now."),
+            theme::bold(24.0),
+            palette.text,
+        );
+        ui.add_space(8.0);
+        theme::text(
+            ui,
+            gettext(app.locale, "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."),
+            theme::regular(14.0),
+            palette.secondary,
+        );
+    });
+}
+
+fn central(app: &mut App, ui: &mut egui::Ui) {
+    let _ = (linux_left_controls_inset, window_controls_reservation);
+    let palette = app.palette;
+    let tint = page_tint(app, ui.ctx());
+    let gap = theme::PANEL_GAP as i8;
+    let radius = theme::RADIUS;
+    egui::CentralPanel::default()
+        .frame(Frame::new().fill(palette.window).inner_margin(Margin {
+            left: gap,
+            right: gap,
+            top: 0,
+            bottom: 0,
+        }))
+        .show(ui, |ui| {
+            let outer_rect = ui.available_rect_before_wrap();
+            // Paint card background strictly on outer_rect so it can NEVER invade the 8px black gap!
+            ui.painter()
+                .rect_filled(outer_rect, CornerRadius::same(radius), palette.panel);
+            ui.set_clip_rect(outer_rect);
+            let rect = outer_rect;
             let page = app.page().clone();
             let overview = matches!(
                 page,
-                Page::Home | Page::Search | Page::Settings | Page::Queue
+                Page::Home | Page::Search | Page::Settings | Page::Queue | Page::WhatsNew
             );
-            // The wash belongs to the page's hero, so it scrolls away with
-            // it. The page's offset is known once it has been laid out, so
-            // the previous frame's serves.
             let scrolled_id = Id::new(("page-scrolled", page.encode()));
             let scrolled = ui
                 .ctx()
                 .data(|data| data.get_temp::<f32>(scrolled_id))
                 .unwrap_or(0.0);
-            if let Some((top, bottom)) = header_wash(&palette, overview, tint) {
-                widgets::paint_vertical_gradient(ui, header_rect(rect, scrolled), top, bottom);
+            if let Some((top, _)) = header_wash(&palette, overview, tint) {
+                let fade = (1.0 - scrolled / 260.0).clamp(0.0, 1.0);
+                if fade > 0.01 {
+                    let wash_rect =
+                        Rect::from_min_size(rect.min, vec2(rect.width(), 340.0)).intersect(rect);
+                    if wash_rect.height() > 0.0 {
+                        widgets::paint_vertical_gradient_rounded(
+                            ui,
+                            wash_rect,
+                            CornerRadius {
+                                nw: radius,
+                                ne: radius,
+                                sw: 0,
+                                se: 0,
+                            },
+                            top.gamma_multiply(fade),
+                            Color32::TRANSPARENT,
+                        );
+                    }
+                }
             }
             ui.spacing_mut().item_spacing = vec2(8.0, 6.0);
-            // egui fades a scrolled page's edge into the panel's plain
-            // colour, which shows as a pale band over a cover's tint; the
-            // page casts a shadow under the header instead.
             ui.spacing_mut().scroll.fade.strength = 0.0;
-            topbar::show(app, ui);
+
+            // Middle section scrollbar 3-second persistence upon pointer exit
+            let center_hovered = ui.rect_contains_pointer(rect);
+            let last_hover_id = Id::new("central_scrollbar_last_active");
+            let now_inst = std::time::Instant::now();
+            let last_active = if center_hovered {
+                ui.ctx()
+                    .data_mut(|d| d.insert_temp(last_hover_id, now_inst));
+                now_inst
+            } else {
+                ui.ctx()
+                    .data(|d| d.get_temp::<std::time::Instant>(last_hover_id))
+                    .unwrap_or(now_inst - std::time::Duration::from_secs(10))
+            };
+            let elapsed = last_active.elapsed().as_secs_f32();
+            let scroll_alpha = if elapsed < 3.0 {
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_millis(50));
+                1.0f32
+            } else if elapsed < 3.4 {
+                let fade = (elapsed - 3.0) / 0.4;
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_millis(16));
+                (1.0 - fade).clamp(0.0, 1.0)
+            } else {
+                0.0f32
+            };
+            ui.spacing_mut().scroll.floating = true;
+            let scroll_style = ui.spacing().scroll;
+            ui.spacing_mut().scroll.dormant_handle_opacity =
+                scroll_style.active_handle_opacity * scroll_alpha;
+            ui.spacing_mut().scroll.active_handle_opacity =
+                scroll_style.active_handle_opacity * scroll_alpha;
+            ui.spacing_mut().scroll.interact_handle_opacity = if scroll_alpha > 0.01 {
+                scroll_style.interact_handle_opacity
+            } else {
+                0.0
+            };
+            ui.spacing_mut().scroll.dormant_background_opacity = 0.0;
+            ui.spacing_mut().scroll.active_background_opacity = 0.0;
+            ui.spacing_mut().scroll.interact_background_opacity = 0.0;
+            ui.spacing_mut().scroll.floating_allocated_width = 0.0;
+            ui.spacing_mut().scroll.floating_width = 8.0;
+            ui.spacing_mut().scroll.bar_width = 8.0;
+            let scrollbar_inset = ui
+                .ctx()
+                .data(|data| data.get_temp::<Rect>(Id::new("npv-collapsed-strip-last-rect")))
+                .map_or(0.0, |overlay| {
+                    let resting_left =
+                        collapsed_bento_rect(overlay, 0.0).left() - theme::PANEL_GAP;
+                    (outer_rect.right() - resting_left).max(0.0)
+                });
+            // The hover overlay grows over the scrollbar's fixed resting position.
+            ui.spacing_mut().scroll.bar_outer_margin = scrollbar_inset + 2.0;
+            ui.spacing_mut().scroll.bar_inner_margin = 0.0;
+
+            // Smooth page switching transition
+            let last_page = ui
+                .ctx()
+                .data(|d| d.get_temp::<Page>(Id::new("central_last_page")));
+            let page_changed = last_page.as_ref() != Some(&page);
+            let start_id = Id::new("central_page_transition_start");
+            let start_time = if page_changed {
+                ui.ctx().data_mut(|d| {
+                    d.insert_temp(Id::new("central_last_page"), page.clone());
+                    d.insert_temp(start_id, now_inst);
+                });
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_millis(16));
+                now_inst
+            } else {
+                ui.ctx()
+                    .data(|d| d.get_temp::<std::time::Instant>(start_id))
+                    .unwrap_or(now_inst)
+            };
+            let page_opacity = if page_changed {
+                0.0f32
+            } else {
+                let elapsed = start_time.elapsed().as_secs_f32();
+                let dur = 0.18f32;
+                let t = (elapsed / dur).min(1.0);
+                if t < 1.0 {
+                    ui.ctx()
+                        .request_repaint_after(std::time::Duration::from_millis(16));
+                }
+                let inv = 1.0 - t;
+                1.0 - inv * inv * inv
+            };
+
             let scroll = crate::autoscroll::show(
                 ui,
                 egui::ScrollArea::vertical()
@@ -292,17 +969,26 @@ fn central(app: &mut App, ui: &mut egui::Ui) {
                     .auto_shrink([false, false]),
                 egui::Vec2b::new(false, true),
                 |ui| {
+                    ui.set_clip_rect(outer_rect);
+                    let page_padding = if page == Page::Home {
+                        40.0
+                    } else {
+                        widgets::PAGE_PADDING
+                    };
+                    let content_w = (rect.width() - page_padding * 2.0).max(100.0);
                     Frame::new()
                         .inner_margin(Margin {
-                            left: widgets::PAGE_PADDING as i8,
-                            right: widgets::PAGE_PADDING as i8,
-                            top: 4,
+                            left: page_padding as i8,
+                            right: page_padding as i8,
+                            top: 16,
                             bottom: 48,
                         })
                         .show(ui, |ui| {
-                            ui.set_min_width(ui.available_width());
+                            ui.set_width(content_w);
+                            ui.multiply_opacity(page_opacity);
                             match page {
                                 Page::Home => home::show(app, ui),
+                                Page::WhatsNew => whats_new_page(app, ui),
                                 Page::TopSongs => collection::top_songs(app, ui),
                                 Page::Search => search::show(app, ui),
                                 Page::LikedSongs => collection::liked(app, ui),
@@ -322,8 +1008,13 @@ fn central(app: &mut App, ui: &mut egui::Ui) {
             );
             ui.ctx()
                 .data_mut(|data| data.insert_temp(scrolled_id, scroll.state.offset.y));
-            header_shadow(ui, scroll.inner_rect, scroll.state.offset.y, palette.dark);
         });
+}
+
+#[cfg(test)]
+fn header_rect(panel: Rect, scrolled: f32) -> Rect {
+    let top = panel.min.y - scrolled.max(0.0);
+    Rect::from_min_size(egui::pos2(panel.min.x, top), vec2(panel.width(), 340.0))
 }
 
 /// The gradient behind a page's header, top to bottom: the art's colour
@@ -342,32 +1033,6 @@ fn header_wash(
     (palette.tint.a() > 0).then_some((palette.tint, Color32::TRANSPARENT))
 }
 
-/// Where the header's wash is painted: the top of the panel, moved up by
-/// how far the page has scrolled, so it leaves with the hero.
-fn header_rect(panel: Rect, scrolled: f32) -> Rect {
-    Rect::from_min_size(
-        panel.min - vec2(0.0, scrolled.max(0.0)),
-        vec2(panel.width(), 340.0),
-    )
-}
-
-/// The shadow the header casts on a page scrolled under it, deepening over
-/// the first few points of scrolling. Dark in both themes, lighter over a
-/// light page.
-fn header_shadow(ui: &egui::Ui, page: Rect, scrolled: f32, dark: bool) {
-    let depth = (scrolled / 24.0).clamp(0.0, 1.0);
-    if depth <= 0.0 {
-        return;
-    }
-    let strength = if dark { 110.0 } else { 36.0 };
-    let rect = Rect::from_min_size(page.min, vec2(page.width(), 14.0));
-    widgets::paint_vertical_gradient(
-        ui,
-        rect,
-        egui::Color32::from_black_alpha((strength * depth) as u8),
-        egui::Color32::TRANSPARENT,
-    );
-}
 
 /// Without a native title bar, the top of every panel drags the window, not
 /// only the page's top bar.
@@ -487,7 +1152,7 @@ fn toasts(app: &mut App, ctx: &egui::Context, bottom_offset: f32) {
     }
     let palette = app.palette;
     egui::Area::new(egui::Id::new("toasts"))
-        .anchor(Align2::RIGHT_BOTTOM, vec2(-20.0, -bottom_offset))
+        .anchor(Align2::CENTER_BOTTOM, vec2(0.0, -bottom_offset))
         .order(egui::Order::Tooltip)
         .interactable(false)
         .show(ctx, |ui| {
@@ -503,7 +1168,11 @@ fn toasts(app: &mut App, ctx: &egui::Context, bottom_offset: f32) {
                 };
                 ui.set_opacity(alpha);
                 Frame::new()
-                    .fill(palette.overlay)
+                    .fill(if toast.kind == ToastKind::Info {
+                        Color32::WHITE
+                    } else {
+                        palette.overlay
+                    })
                     .stroke(Stroke::new(1.0, palette.outline))
                     .corner_radius(CornerRadius::same(theme::RADIUS))
                     .inner_margin(Margin::symmetric(14, 10))
@@ -519,7 +1188,9 @@ fn toasts(app: &mut App, ctx: &egui::Context, bottom_offset: f32) {
                                 ToastKind::Info => (Icon::CircleCheck, palette.accent),
                                 ToastKind::Error => (Icon::CircleAlert, palette.danger),
                             };
-                            theme::icon(ui, icon, 16.0, color);
+                            if toast.kind == ToastKind::Error {
+                                theme::icon(ui, icon, 16.0, color);
+                            }
                             // Laid out at its own width. The area
                             // remembers its size, so after a short toast a
                             // label left to wrap at the area's width broke
@@ -527,8 +1198,12 @@ fn toasts(app: &mut App, ctx: &egui::Context, bottom_offset: f32) {
                             let galley = ui.painter().layout(
                                 toast.message.clone(),
                                 theme::medium(13.5),
-                                palette.text,
-                                280.0,
+                                if toast.kind == ToastKind::Info {
+                                    Color32::BLACK
+                                } else {
+                                    palette.text
+                                },
+                                440.0,
                             );
                             ui.add(egui::Label::new(galley));
                         });
@@ -542,7 +1217,7 @@ mod window_chrome_tests {
     use super::*;
     use fastframe_titlebar::Footprint;
 
-    /// Windows' three buttons in its 48-point header.
+    /// Windows' three caption buttons.
     const BUTTONS: Footprint = Footprint {
         left: 0.0,
         right: 3.0 * 36.0 + 5.0,
@@ -645,41 +1320,5 @@ mod tests {
             panel.min,
             "no overscroll bounce"
         );
-    }
-
-    /// The header casts a shadow only on a page scrolled under it, and it
-    /// is black in both themes, never the page's own colour.
-    #[test]
-    fn the_header_shadow_appears_once_the_page_scrolls() {
-        let ctx = egui::Context::default();
-        let page = Rect::from_min_size(egui::pos2(0.0, 80.0), vec2(800.0, 600.0));
-        let shadows = |scrolled: f32, dark: bool| {
-            let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
-                header_shadow(ui, page, scrolled, dark);
-            });
-            output.textures_delta.clear();
-            output
-                .shapes
-                .iter()
-                .filter_map(|shape| match &shape.shape {
-                    egui::Shape::Mesh(mesh) => Some(mesh.vertices.clone()),
-                    _ => None,
-                })
-                .flatten()
-                .collect::<Vec<_>>()
-        };
-        assert!(
-            shadows(0.0, true).is_empty(),
-            "nothing at the top of the page"
-        );
-        for dark in [true, false] {
-            let vertices = shadows(40.0, dark);
-            let top = vertices
-                .iter()
-                .find(|vertex| vertex.pos.y == page.top())
-                .expect("a shadow along the page's top edge");
-            assert!(top.color.a() > 0);
-            assert_eq!((top.color.r(), top.color.g(), top.color.b()), (0, 0, 0));
-        }
     }
 }

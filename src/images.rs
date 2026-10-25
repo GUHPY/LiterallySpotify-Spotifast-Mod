@@ -663,36 +663,61 @@ pub struct LyricsBackdrop {
     requested: bool,
     retry_at: Option<Instant>,
     pending: Option<std::sync::mpsc::Receiver<Result<Option<egui::ColorImage>, String>>>,
+    image: Option<std::sync::Arc<egui::ColorImage>>,
     texture: Option<egui::TextureHandle>,
+    prev_texture: Option<egui::TextureHandle>,
+    transition_start: Option<Instant>,
 }
 
 /// How long a backdrop whose artwork failed to download waits to ask again.
 const BACKDROP_RETRY: Duration = Duration::from_secs(3);
 
 impl LyricsBackdrop {
-    /// The blurred backdrop for `uri`.
-    ///
-    /// The artwork is fetched here, from the disk cache or the network,
-    /// rather than read from the bytes the image loader holds: a cover
-    /// painted on the same screen releases those bytes as soon as its
-    /// texture exists, and a backdrop waiting on them could wait forever.
-    /// Until the new song's backdrop is ready the previous one stays, so a
-    /// change of song never flashes black.
-    pub fn texture(
+    /// Drops GPU texture handles while preserving the decoded image in memory,
+    /// so recreating the window from the tray restores the backdrop instantly
+    /// in the new OpenGL context without flashing black.
+    pub fn forget_textures(&mut self) {
+        self.texture = None;
+        self.prev_texture = None;
+        self.transition_start = None;
+    }
+
+    /// The current backdrop, optional previous backdrop in transition, and
+    /// transition progress `t` (0.0 to 1.0).
+    pub fn textures(
         &mut self,
         ctx: &egui::Context,
         loader: &ArtLoader,
         uri: Option<&str>,
-    ) -> Option<&egui::TextureHandle> {
+    ) -> (Option<&egui::TextureHandle>, Option<&egui::TextureHandle>, f32) {
         if self.uri.as_deref() != uri {
-            *self = Self {
-                uri: uri.map(str::to_owned),
-                texture: self.texture.take().filter(|_| uri.is_some()),
-                ..Default::default()
-            };
+            if let Some(u) = uri {
+                self.uri = Some(u.to_owned());
+                self.requested = false;
+                self.retry_at = None;
+                self.pending = None;
+            }
         }
-        let uri = uri?;
+
+        // Recreate texture if window was recreated (e.g. restored from tray)
+        if self.texture.is_none()
+            && let Some(image) = &self.image
+        {
+            self.texture = Some(ctx.load_texture(
+                "lyrics-backdrop",
+                (**image).clone(),
+                egui::TextureOptions::LINEAR,
+            ));
+        }
+
+        let Some(uri) = uri else {
+            return (self.texture.as_ref(), None, 1.0);
+        };
+
         let due = self.retry_at.is_none_or(|at| Instant::now() >= at);
+        if self.image.is_none() && self.pending.is_none() && self.texture.is_none() {
+            self.requested = false;
+        }
         if !self.requested && due && is_http(uri) {
             self.requested = true;
             self.retry_at = None;
@@ -717,9 +742,20 @@ impl LyricsBackdrop {
         if let Some(receiver) = &self.pending {
             match receiver.try_recv() {
                 Ok(Ok(image)) => {
-                    self.texture = image.map(|image| {
-                        ctx.load_texture("lyrics-backdrop", image, egui::TextureOptions::LINEAR)
-                    });
+                    if let Some(img) = image {
+                        let arc_img = std::sync::Arc::new(img);
+                        self.image = Some(std::sync::Arc::clone(&arc_img));
+                        let new_tex = ctx.load_texture(
+                            "lyrics-backdrop",
+                            (*arc_img).clone(),
+                            egui::TextureOptions::LINEAR,
+                        );
+                        if self.texture.is_some() {
+                            self.prev_texture = self.texture.take();
+                            self.transition_start = Some(Instant::now());
+                        }
+                        self.texture = Some(new_tex);
+                    }
                     self.pending = None;
                 }
                 Ok(Err(_)) | Err(std::sync::mpsc::TryRecvError::Disconnected) => {
@@ -731,7 +767,31 @@ impl LyricsBackdrop {
                 Err(std::sync::mpsc::TryRecvError::Empty) => {}
             }
         }
-        self.texture.as_ref()
+
+        let mut t = 1.0;
+        if let Some(start) = self.transition_start {
+            let elapsed = start.elapsed().as_secs_f32();
+            t = (elapsed / 0.45).min(1.0);
+            if t < 1.0 {
+                ctx.request_repaint_after(Duration::from_millis(16));
+            } else {
+                self.prev_texture = None;
+                self.transition_start = None;
+            }
+        }
+
+        (self.texture.as_ref(), self.prev_texture.as_ref(), t)
+    }
+
+    /// The blurred backdrop for `uri`.
+    pub fn texture(
+        &mut self,
+        ctx: &egui::Context,
+        loader: &ArtLoader,
+        uri: Option<&str>,
+    ) -> Option<&egui::TextureHandle> {
+        let (cur, _, _) = self.textures(ctx, loader, uri);
+        cur
     }
 }
 

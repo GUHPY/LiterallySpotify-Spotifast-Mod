@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "upstream": "https://github.com/crmne/spotifast.git",
+  "integrated_ref": "v0.13.3",
+  "integrated_commit": "ec35f68756ccc2c0579ab79582bac358bf7abf25",
+  "fork_snapshot": "GUHPY/Debloat@14f71c0e780615c3be24332f3f47f32ce45d8def:Spotify",
+  "snapshot_version": "0.13.4",
+  "note": "The fork snapshot includes local core changes beyond the upstream anchor. Three-way engine updates must preserve those changes or report a conflict."
+}

@@ -159,6 +159,28 @@ Library sidebar to start playing it. A single click still opens the row's page.
 Pointing at a row's cover art also shows a play button, but only when the
 sidebar is not in compact mode.
 
+When Now Playing is collapsed on the right, hovering over its strip reveals a
+dimmed preview. The translucent strip and its separator overlay the main view
+without reserving any layout space. Click the chevron to open Now Playing.
+
+Typing in the top search field shows suggestions over the current page. Use
+the arrow keys to choose a suggestion, or press Enter to submit the query.
+Confirmed results stay in place while another query is being typed.
+
+**Show more** expands the lyrics preview inside Now Playing; **Show less**
+collapses it. Artist, credits, and next-up cards use the metadata and queue
+available to this client. Composer and producer credits, artist biographies,
+monthly listeners, music videos, and tour dates are not supplied by this backend.
+
+The **Create** button opens a menu before the new-playlist dialog. Options that
+Spotify does not provide to this client remain unavailable. On Home, choose
+**Hide** in the featured card's menu to dismiss that card across restarts.
+
+In Settings, the zoom presets and the 70–130% ruler change the interface scale;
+**Reset** restores 100%. Listening activity shows an introduction instead of
+invented friends. Its Settings button opens Spotify's listening-activity help;
+this client cannot read your friends' activity or change Spotify's social settings.
+
 ## Search from a launcher
 
 **In development, not included in 0.8.0:** a Spotify search link opens Search

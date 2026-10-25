@@ -213,6 +213,21 @@ mod x11 {
 /// its top bar fit beside the narrowest sidebar from here.
 pub const MAIN_MIN_SIZE: [f32; 2] = [760.0, 520.0];
 
+/// Ignore transient restore bounds that would crop the main window's controls.
+pub fn main_window_needs_size_recovery(ctx: &egui::Context) -> bool {
+    ctx.input(|input| {
+        let viewport = input.viewport();
+        viewport.minimized != Some(true)
+            && viewport.maximized != Some(true)
+            && viewport.fullscreen != Some(true)
+            && viewport.inner_rect.is_some_and(|rect| {
+                rect.width() > 0.0
+                    && rect.height() > 0.0
+                    && (rect.width() < MAIN_MIN_SIZE[0] || rect.height() < MAIN_MIN_SIZE[1])
+            })
+    })
+}
+
 static FIXED_SIZE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Whether the main window keeps one size it was given, as demo shots ask,
@@ -229,6 +244,32 @@ pub fn set_fixed_size(on: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn main_window_recovery_only_targets_undersized_restored_windows() {
+        for (size, minimized, maximized, fullscreen, expected) in [
+            ([140.0, 80.0], false, false, false, true),
+            ([760.0, 80.0], false, false, false, true),
+            ([140.0, 520.0], false, false, false, true),
+            ([760.0, 520.0], false, false, false, false),
+            ([140.0, 80.0], true, false, false, false),
+            ([140.0, 80.0], false, true, false, false),
+            ([140.0, 80.0], false, false, true, false),
+            ([0.0, 0.0], false, false, false, false),
+        ] {
+            let ctx = egui::Context::default();
+            let mut input = egui::RawInput::default();
+            let viewport = input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap();
+            viewport.inner_rect = Some(egui::Rect::from_min_size(egui::Pos2::ZERO, size.into()));
+            viewport.minimized = Some(minimized);
+            viewport.maximized = Some(maximized);
+            viewport.fullscreen = Some(fullscreen);
+            let mut output = ctx.run_ui(input, |ui| {
+                assert_eq!(main_window_needs_size_recovery(ui.ctx()), expected);
+            });
+            output.textures_delta.clear();
+        }
+    }
 
     #[test]
     fn missing_opengl_points_arm_at_the_store_pack_and_others_at_the_guide() {

@@ -34,11 +34,36 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.set_width(420.0);
             match dialog {
+                Dialog::Credits(track) => {
+                    theme::text(ui, gettext(locale, "Credits"), theme::bold(22.0), palette.text);
+                    ui.add_space(16.0);
+                    theme::text(ui, &track.name, theme::bold(18.0), palette.text);
+                    for artist in &track.artists {
+                        ui.add_space(16.0);
+                        if theme::link(ui, &artist.name, theme::medium(15.0), palette.text).clicked()
+                            && let Some(id) = artist.id.as_ref()
+                        {
+                            app.actions.push(Action::Open(crate::model::Page::Artist(id.clone())));
+                            app.actions.push(Action::CloseDialog);
+                        }
+                        theme::text(ui, gettext(locale, "Artist"), theme::regular(13.0), palette.secondary);
+                    }
+                    if let Some(album) = track.album.as_ref() {
+                        for copyright in &album.copyrights {
+                            ui.add_space(12.0);
+                            ui.add(egui::Label::new(egui::RichText::new(&copyright.text).font(theme::regular(12.0)).color(palette.secondary)).wrap());
+                        }
+                    }
+                    ui.add_space(24.0);
+                    if theme::pill_button(ui, &palette, &gettext(locale, "Close"), false).clicked() {
+                        app.actions.push(Action::CloseDialog);
+                    }
+                }
                 Dialog::PersonalAppIntro => {
                     theme::text(ui, gettext(locale, "Spend less time waiting for Spotify"), theme::bold(20.0), palette.text);
                     ui.add_space(12.0);
                     for text in [
-                        gettext(locale, "Spotifast's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."),
+                        gettext(locale, "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."),
                         gettext(locale, "Your Premium account lets you create a free personal Spotify app. Connect it here to give supported requests your own allowance. Some pages still use the shared connection."),
                         gettext(locale, "Setup takes a few minutes. You can also find it later in Settings under Personal Spotify app."),
                     ] {
@@ -210,7 +235,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                         egui::Label::new(
                             egui::RichText::new(gettext(
                                 locale,
-                                "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotifast.",
+                                "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify.",
                             ))
                             .font(theme::regular(14.0))
                             .color(palette.secondary),

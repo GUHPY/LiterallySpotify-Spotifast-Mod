@@ -1,163 +1,70 @@
-<p align="center">
-  <img src="docs/assets/images/logo.svg" alt="Spotifast logo" width="88" height="88">
-</p>
+# LiterallySpotify — Spotifast Mod
 
-<h1 align="center">Spotifast</h1>
+A Spotify-inspired desktop interface built on [Spotifast](https://github.com/crmne/spotifast). The familiar library, Home, search, player and Now Playing layout run in Spotifast's native Rust application.
 
-<p align="center"><strong>Spotify, native and fast.</strong><br>A lightweight music app for Linux, macOS, and Windows.</p>
+[Download for Windows](https://github.com/GUHPY/LiterallySpotify-Spotifast-Mod/releases/latest) · [Visual comparison](docs/UI_COMPARISON.md) · [All features](docs/FEATURES.md) · [Engine updates](docs/ENGINE_UPDATES.md)
 
-<p align="center">
-  <a href="https://spotifast.rocks/download/"><strong>Download</strong></a> ·
-  <a href="https://spotifast.rocks/getting-started/">Getting started</a> ·
-  <a href="https://spotifast.rocks/using-spotifast/">User guide</a> ·
-  <a href="CONTRIBUTING.md">Contribute</a>
-</p>
+![LiterallySpotify on Windows](docs/screenshots/mod/live-home.png)
 
-<p align="center">
-  <a href="Cargo.toml"><img src="https://img.shields.io/badge/Built_with-Rust-1ed760" alt="Built with Rust"></a>
-  <a href="https://spotifast.rocks/download/"><img src="https://img.shields.io/badge/Linux_%C2%B7_macOS_%C2%B7_Windows-24292f" alt="Linux, macOS, and Windows"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-1ed760" alt="MIT license"></a>
-</p>
+## The interface
 
-Spotifast is a Spotify client written in Rust with
-[egui](https://www.egui.rs) and [fastframe](https://fastframe.dev), the
-framework behind a family of native desktop apps. It plays music through
-[librespot](https://github.com/librespot-org/librespot), typically uses
-100–250 MB of RAM, starts in well under a second, and has no browser engine.
+Home uses artwork colours, playlist shortcuts and horizontal shelves. A persistent top bar holds navigation, search, notifications and the profile menu. The library and Now Playing panels frame the content, and playback controls stay at the bottom.
 
-The interface includes complete
-[translations for all supported languages](docs/_reference/translating.md#languages-and-coverage).
+Search suggestions appear inside the top-bar dropdown while the current page stays visible. Enter opens the full results view. Recent selections keep their artwork and media identity across restarts. A result's cover supports play and pause, with a dark overlay, row highlight and a short elastic press-and-release animation.
 
-**Playback needs Spotify Premium.** Free accounts can browse and search, but
-cannot play music through Spotifast.
+Now Playing brings together artwork, expandable lyrics, artist information, available credits and the next queued item. The collapsed panel reveals its own content on hover over the content edge. Lyrics also have a dedicated view with track actions and window controls.
 
-![Spotifast Home with the playlist library, recommendations, queue, and player visible](docs/screenshot.png)
-
-<details>
-<summary><strong>Watch Spotifast in action</strong></summary>
-
-https://github.com/user-attachments/assets/a5f669ce-b3b7-4f8e-9933-976a78876c7e
-
-</details>
-
-[Features](#your-music-on-your-desktop) · [Install](#install) · [First playback](#start-listening) · [Mini player](#the-winamp-mini-player) · [MilkDrop](#music-in-motion) · [Help](#guides-and-help)
-
-## Your music, on your desktop
-
-| Feature | What you can do |
-|---|---|
-| **Library and search** | Browse playlists, Liked Songs, albums, artists, and podcasts. Search the catalogue and edit playlists you own. |
-| **Spotify Connect** | Play on this computer or control playback on your other devices, including Google Cast speakers and groups. |
-| **Themes** | Choose light, dark, system appearance, or custom colours. On Omarchy, follow your desktop theme. |
-| **Desktop controls** | Use keyboard shortcuts and media keys. Keep music playing from the tray when supported by your desktop and settings. |
-| **Winamp mini player** | Use classic skins with an equalizer, playlist, and animated sound displays. |
-| **MilkDrop** | Watch music-reactive visuals in a separate window or full screen. See platform availability below. |
+The [visual tour](docs/UI_COMPARISON.md) presents the final interface alongside original Spotifast and Spotify references. It covers the library, collections, artists, search, queue, devices, lyrics, menus, settings and inherited mini-player tools.
 
 ## Install
 
-| Platform | Installation |
-|---|---|
-| **macOS** | `brew install --cask crmne/tap/spotifast`, or [download the Mac app](https://spotifast.rocks/download/#macos). |
-| **Arch Linux** | `yay -S spotifast-bin` |
-| **Windows** | Choose your build on the [Download page](https://spotifast.rocks/download/). |
-| **Other Linux** | Find Flatpak, AppImage, Nix, and other options on the [Download page](https://spotifast.rocks/download/). |
-| **From source** | Follow [Build from source](https://spotifast.rocks/getting-started/#build-from-source) for dependencies and commands. |
+The first release targets **Windows x64**. Choose an asset from [Releases](https://github.com/GUHPY/LiterallySpotify-Spotifast-Mod/releases/latest):
 
-## Start listening
+| Asset | Use |
+| --- | --- |
+| `literallyspotify-v0.1.0-x86_64-pc-windows-msvc-setup.exe` | Install or update the Windows app and its Start menu shortcut. |
+| `literallyspotify-v0.1.0-x86_64-pc-windows-msvc.zip` | Extract the whole folder and run `Spotify.exe`. Keep `literallyspotify-portable.txt` beside it. |
+| `checksums.txt` and `checksums.txt.sig` | SHA-256 checksums and the Ed25519 signature verified by the app updater. |
 
-1. Open Spotifast and choose **Sign in with Spotify**. Approve access in your
-   browser, then return to the app to see your library.
-2. To listen on this computer, open the device menu in the bottom player bar
-   and choose **Set up playback here**, also available in Settings.
-3. Complete the separate playback approval in your browser. Your computer
-   appears as a Spotify Connect device named **Spotifast**.
+The installed executable is **Spotify.exe**, with the Windows shortcut named **Spotify**. The installer uses `%LOCALAPPDATA%\Programs\Spotify`, updating the existing custom installation at that path. The Microsoft Store Spotify package has a different location.
 
-Library access and local playback have separate approvals. Spotifast remembers
-both using your computer's protected storage. See
-[Getting started](https://spotifast.rocks/getting-started/) for the full walkthrough
-and [How it connects](https://spotifast.rocks/how-it-connects/) for the details.
+Sign in through the application's normal login flow. No account, token, private signing key or personal profile is included in the downloads. Spotify's account and playback requirements still apply; see the inherited [connection guide](docs/_reference/how-it-connects.md) and [capability limits](docs/_reference/what-spotify-allows.md).
 
-## The Winamp mini player
+## Updates that preserve the interface
 
-A classic look for your music, with Winamp 2 `.wsz` skins, an equalizer,
-a playlist, and animated sound displays. Switch with **Ctrl+M**
-(**Cmd+Shift+M** on macOS), the shrink button, or Settings.
+The app's updater reads **this repository's releases** and requires this fork's signature. It does not install upstream Spotifast binaries over the mod.
 
-<p align="center">
-  <img src="docs/assets/images/winamp.png" alt="Spotifast's Winamp mini player with the built-in skin, equalizer, and playlist" width="320">
-</p>
+Engine maintenance is a separate process: an allowlist imports playback, authentication, API and device code while protecting UI files, UI dependencies, icons, packaging and updater identity. Changes are integrated on a review branch and checked before a new LiterallySpotify release is built. An upstream API conflict can require a manual adaptation.
 
-[Explore the mini player](https://spotifast.rocks/winamp/), including skins,
-window sizes, controls, and the return to the main player.
+This is one native executable. Engine updates rebuild the app; they are not a hot-swapped plugin. See [Engine updates](docs/ENGINE_UPDATES.md) for the exact boundary and commands.
 
-## Music in motion
+## What remains from Spotifast
 
-MilkDrop reacts to music playing on this computer, with more than 10,000
-presets downloaded on first use. Open it from the visualiser button,
-Settings, or the mini player's **V** menu.
+The mod retains library browsing, playback, Spotify Connect controls, queue, podcasts, themes, keyboard and media controls, the Winamp-style mini player, equalizer and visualizer integration. The [feature inventory](docs/FEATURES.md) distinguishes redesigned views, inherited capabilities and service limitations.
 
-![MilkDrop visualiser displaying coloured concentric patterns in Spotifast](docs/assets/images/milkdrop-poster.jpg)
+## Build
 
-Included on **Linux**, **macOS**, and **Windows Intel/AMD** builds.
-It is not included in the Windows on ARM download.
-[Read the MilkDrop guide](https://spotifast.rocks/milkdrop/) for presets,
-controls, and fullscreen mode.
+Use the repository's Rust toolchain:
 
-## Guides and help
-
-The complete guide lives at **[spotifast.rocks](https://spotifast.rocks/)**.
-
-| You want to… | Read |
-|---|---|
-| Sign in, set up playback, or configure themes, fonts, and proxies | [Getting started](https://spotifast.rocks/getting-started/) |
-| Learn shortcuts, command-line controls, and updates | [Everyday use](https://spotifast.rocks/using-spotifast/) |
-| Find configuration and stored files | [Settings and files](https://spotifast.rocks/settings-and-files/) |
-| Understand scrolling performance and reduce loading delays | [Make it even faster](https://spotifast.rocks/make-it-even-faster/) |
-| Understand what is stored and sent | [Privacy](https://spotifast.rocks/privacy/) · [How it connects](https://spotifast.rocks/how-it-connects/) |
-| Check Spotify and librespot limitations | [What Spotify allows](https://spotifast.rocks/what-spotify-allows/) |
-| Understand account risk | [Will my account get banned?](https://spotifast.rocks/what-is-spotifast/#will-my-spotify-account-get-banned) |
-| Report a bug or propose a feature | Read [Contributing](CONTRIBUTING.md), then use the [issue forms](https://github.com/crmne/spotifast/issues/new/choose). |
-
-## Contributing
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening an issue or pull
-request. To look at the interface without a Spotify account, run:
-
-```sh
-cargo run --features demo -- --demo
+```powershell
+cargo build --release --locked --bin Spotify -j 1
 ```
 
-Translations live in `assets/i18n/`; see
-[Translating Spotifast](docs/_reference/translating.md). Release packaging
-is described in [PACKAGING.md](PACKAGING.md).
+The result is `target/release/Spotify.exe`. Build with `--features demo` and run with `--demo` for an offline UI demonstration using sample data.
 
-## More native apps
+Maintainer checks:
 
-**Want WhatsApp just as fast and native?** [ZapFast](https://zapfast.rocks)
-is Spotifast's sibling. Both are built on
-[fastframe](https://fastframe.dev).
+```powershell
+python -m pip install -r packaging/requirements-release.txt
+python -m unittest discover -s packaging -p test_maintenance.py
+cargo check --locked --all-targets
+python packaging/verify-ui.py
+```
 
-## Sonos playback
+See [CONTRIBUTING.md](CONTRIBUTING.md), [maintenance](docs/ENGINE_UPDATES.md) and the inherited [technical documentation](docs/_reference/).
 
-Sonos speakers use the Spotify Connect session for playback control. Enable
-local playback first, then select the speaker in the device picker.
+## Credits and licence
 
-## Acknowledgements
+LiterallySpotify is an independent community mod of **Spotifast**, created by [Carmine Paolino and contributors](https://github.com/crmne/spotifast). The native client, playback integration and much of the functionality come from that project. This repository preserves its [MIT licence](LICENSE) and upstream Git history.
 
-Spotifast uses [librespot](https://github.com/librespot-org/librespot),
-[egui](https://www.egui.rs), [fastframe](https://fastframe.dev), the [Inter](https://rsms.me/inter/)
-typeface (OFL), and [Lucide](https://lucide.dev) icons (ISC).
-
-Spotifast is an independent project and is not affiliated with Spotify.
-Spotify is a trademark of Spotify AB.
-
-Licensed under the [MIT License](LICENSE).
-
-## Star history
-
-<a href="https://www.star-history.com/?repos=crmne%2Fspotifast&amp;type=date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=crmne/spotifast&amp;type=date&amp;theme=dark">
-    <img alt="Spotifast GitHub stars over time" src="https://api.star-history.com/chart?repos=crmne/spotifast&amp;type=date">
-  </picture>
-</a>
+Spotify is the visual reference and music service. This project is not affiliated with or endorsed by Spotify AB. Product names, artwork and third-party material shown in screenshots belong to their respective owners.

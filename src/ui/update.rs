@@ -16,7 +16,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
     };
     let palette = app.palette;
     let locale = app.locale;
-    let title = gettext(locale, "Update Spotifast");
+    let title = "Update Spotify";
     let mut close = ctx.input(|input| input.key_pressed(egui::Key::Escape));
     let frame = Frame::new()
         .fill(palette.overlay)
@@ -29,7 +29,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
             spread: 0,
             color: palette.shadow,
         });
-    egui::Window::new(title.as_ref())
+    egui::Window::new(title)
         .id(egui::Id::new("spotifast-update"))
         .title_bar(false)
         .resizable(false)
@@ -40,7 +40,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.set_width(420.0_f32.min((ctx.content_rect().width() - 64.0).max(240.0)));
             ui.horizontal(|ui| {
-                theme::text(ui, title.as_ref(), theme::bold(20.0), palette.text);
+                theme::text(ui, title, theme::bold(20.0), palette.text);
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     close |= theme::icon_button(
                         ui,
@@ -112,7 +112,7 @@ pub fn show(app: &mut App, ctx: &egui::Context) {
                         egui::Label::new(
                             RichText::new(gettext(
                                 locale,
-                                "Music playing on this computer will stop when Spotifast restarts.",
+                                "Music playing on this computer will stop when Spotify restarts.",
                             ))
                             .font(theme::regular(14.0))
                             .color(palette.secondary),

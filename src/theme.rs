@@ -42,22 +42,37 @@ impl Palette {
     pub fn dark() -> Self {
         Self {
             dark: true,
-            window: Color32::from_rgb(0x0f, 0x11, 0x14),
-            panel: Color32::from_rgb(0x15, 0x18, 0x1c),
-            surface: Color32::from_rgb(0x1d, 0x21, 0x27),
-            surface_hover: Color32::from_rgb(0x26, 0x2b, 0x33),
-            surface_active: Color32::from_rgb(0x2f, 0x35, 0x3f),
-            outline: Color32::from_rgb(0x2a, 0x30, 0x38),
-            text: Color32::from_rgb(0xf2, 0xf4, 0xf6),
-            secondary: Color32::from_rgb(0xa9, 0xb1, 0xbc),
-            dim: Color32::from_rgb(0x6e, 0x77, 0x84),
+            // Official Spotify Bento Canvas (#000000)
+            window: Color32::from_rgb(0x00, 0x00, 0x00),
+            // Official Spotify Bento Container (--background-base: #121212)
+            panel: Color32::from_rgb(0x12, 0x12, 0x12),
+            // Official Spotify Elevated Surface (--background-elevated-base: #1f1f1f)
+            surface: Color32::from_rgb(0x1f, 0x1f, 0x1f),
+            // Official Spotify Elevated Highlight (--background-elevated-highlight: #2a2a2a)
+            surface_hover: Color32::from_rgb(0x2a, 0x2a, 0x2a),
+            // Official Spotify Elevated Press (--background-elevated-press: #191919)
+            surface_active: Color32::from_rgb(0x19, 0x19, 0x19),
+            // Official Spotify Decorative Subdued (--decorative-subdued: #292929)
+            outline: Color32::from_rgb(0x29, 0x29, 0x29),
+            // Official Spotify Text Base (--text-base: #ffffff)
+            text: Color32::from_rgb(0xff, 0xff, 0xff),
+            // Official Spotify Text Subdued (--text-subdued: #b3b3b3)
+            secondary: Color32::from_rgb(0xb3, 0xb3, 0xb3),
+            // Official Spotify Muted/Placeholder (#7c7c7c)
+            dim: Color32::from_rgb(0x7c, 0x7c, 0x7c),
+            // Official Spotify Bright Accent (--background-bright-accent: #1ed760)
             accent: Color32::from_rgb(0x1e, 0xd7, 0x60),
-            accent_hover: Color32::from_rgb(0x3c, 0xe8, 0x7a),
-            on_accent: Color32::from_rgb(0x0a, 0x14, 0x0e),
-            danger: Color32::from_rgb(0xf5, 0x71, 0x7f),
-            warning: Color32::from_rgb(0xf2, 0xb8, 0x5c),
-            overlay: Color32::from_rgb(0x22, 0x27, 0x2e),
-            shadow: Color32::from_black_alpha(140),
+            // Official Spotify Accent Highlight (#3be477)
+            accent_hover: Color32::from_rgb(0x3b, 0xe4, 0x77),
+            // Official Spotify Text on Accent (#000000)
+            on_accent: Color32::from_rgb(0x00, 0x00, 0x00),
+            // Official Spotify Negative (--text-negative: #f3727f)
+            danger: Color32::from_rgb(0xf3, 0x72, 0x7f),
+            // Official Spotify Warning (--text-warning: #ffa42b)
+            warning: Color32::from_rgb(0xff, 0xa4, 0x2b),
+            // Official Spotify Popover/Dropdown (#282828)
+            overlay: Color32::from_rgb(0x28, 0x28, 0x28),
+            shadow: Color32::from_black_alpha(180),
             tint: Color32::TRANSPARENT,
         }
     }
@@ -103,6 +118,11 @@ impl Palette {
             )
         };
         Color32::from_rgb((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
+    }
+
+    /// Whether this palette is an OLED pure black palette.
+    pub fn is_oled(&self) -> bool {
+        self.dark && self.window == Color32::BLACK && self.panel == Color32::BLACK
     }
 }
 
@@ -194,20 +214,20 @@ pub fn catalog_detail(
 
 pub const RADIUS: u8 = 8;
 pub const RADIUS_SMALL: u8 = 4;
+pub const PANEL_GAP: f32 = 8.0;
 pub const ROW_HEIGHT: f32 = 56.0;
 pub const COMPACT_ROW_HEIGHT: f32 = 48.0;
 /// The compact track list: one line, no cover.
 pub const THIN_ROW_HEIGHT: f32 = 36.0;
-pub const PLAYER_BAR_HEIGHT: f32 = 88.0;
+pub const PLAYER_BAR_HEIGHT: f32 = 72.0;
 /// The narrowest either right-hand panel goes. The queue and the lyrics
 /// take the same edge and swap places there, so a width that suits one
 /// has to suit the other, or the window would jump on the swap.
 pub const SIDE_PANEL_MIN_WIDTH: f32 = 280.0;
-pub const TOP_BAR_HEIGHT: f32 = 56.0;
-pub const CUSTOM_TOP_BAR_HEIGHT: f32 = 48.0;
+pub const TOP_BAR_HEIGHT: f32 = 60.0;
+pub const CUSTOM_TOP_BAR_HEIGHT: f32 = TOP_BAR_HEIGHT;
 
-/// Keep the custom Windows header close to its 36-point caption controls.
-/// Linux's custom title bar keeps the ordinary height.
+/// Keep caption controls aligned with the global navigation bar.
 pub fn top_bar_height() -> f32 {
     if cfg!(windows) && fastframe_titlebar::enabled() {
         CUSTOM_TOP_BAR_HEIGHT
@@ -367,16 +387,17 @@ fn apply_to_style(style: &mut egui::Style, palette: &Palette) {
     style.spacing.window_margin = egui::Margin::same(16);
     style.spacing.scroll = egui::style::ScrollStyle {
         bar_width: 8.0,
-        floating_width: 6.0,
+        floating_width: 8.0,
         floating_allocated_width: 0.0,
         handle_min_length: 28.0,
-        bar_inner_margin: 3.0,
+        bar_inner_margin: 0.0,
         bar_outer_margin: 2.0,
         dormant_background_opacity: 0.0,
         dormant_handle_opacity: 0.0,
         active_background_opacity: 0.0,
-        active_handle_opacity: 0.55,
-        interact_handle_opacity: 0.85,
+        interact_background_opacity: 0.0,
+        active_handle_opacity: 0.3,
+        interact_handle_opacity: 0.5,
         foreground_color: true,
         ..egui::style::ScrollStyle::floating()
     };
@@ -409,8 +430,10 @@ fastframe_icons::icons! {
         ArrowRight => "arrow-right",
         AudioLines => "audio-lines",
         BadgeCheck => "badge-check",
+        Bell => "bell",
         Bookmark => "bookmark",
         BookmarkFilled => "bookmark-filled",
+        Browse => "browse",
         Car => "car",
         Cast => "cast",
         Check => lucide "check",
@@ -430,6 +453,9 @@ fastframe_icons::icons! {
         Ellipsis => lucide "ellipsis",
         Expand => "expand",
         ExternalLink => lucide "external-link",
+        FriendActivity => "friend-activity",
+        Folder => "folder",
+        Sliders => "sliders-horizontal",
         Gamepad => "gamepad-2",
         Globe => "globe",
         GripVertical => "grip-vertical",
@@ -437,11 +463,32 @@ fastframe_icons::icons! {
         Heart => "heart",
         HeartFilled => "heart-filled",
         House => "house",
+        HouseFilled => "house-filled",
         Info => lucide "info",
         Laptop => "laptop",
         Library => "library",
         LayoutGrid => "layout-grid",
         LayoutList => "layout-list",
+        ListCompact => "list-compact",
+        ListStandard => "list-standard",
+        GridCompact => "grid-compact",
+        GridStandard => "grid-standard",
+        ExpandLibrary => "expand-library",
+        HideNowPlaying => "hide-now-playing",
+        Fullscreen => "fullscreen",
+        QueueSpotify => "queue-spotify",
+        ConnectDevice => "connect-device",
+        LyricsMicSpotify => "lyrics-mic-spotify",
+        MiniplayerSpotify => "miniplayer-spotify",
+        VolumeSpotify => "volume-spotify",
+        VolumeMuteSpotify => "volume-mute-spotify",
+        Listening => "listening",
+        SkipForwardSpotify => "skip-forward-spotify",
+        SkipBackSpotify => "skip-back-spotify",
+        AddToQueue => "add-to-queue",
+        AddToPlaylist => "add-to-playlist",
+        GoToArtist => "go-to-artist",
+        ShareSidebar => "share-sidebar",
         ListEnd => "list-end",
         ListMusic => "list-music",
         ListPlus => "list-plus",
@@ -449,15 +496,19 @@ fastframe_icons::icons! {
         Loader => "loader-circle",
         Lock => lucide "lock",
         LogOut => lucide "log-out",
+        LyricsMic => "lyrics-mic",
         Mic => lucide "mic",
+        Miniplayer => "miniplayer",
         Minus => lucide "minus",
         Monitor => lucide "monitor",
         Moon => lucide "moon",
         Music => "music",
+        NowPlayingView => "now-playing-view",
         Pause => lucide "pause",
         PauseFilled => "pause-filled",
         PanelLeft => lucide "panel-left",
         Pin => lucide "pin",
+        PinFilled => "pin-filled",
         PinOff => lucide "pin-off",
         Pencil => lucide "pencil",
         Play => lucide "play",
@@ -470,6 +521,7 @@ fastframe_icons::icons! {
         Search => lucide "search",
         Settings => lucide "settings",
         Shrink => "shrink",
+        MinimizeView => "minimizar-tela",
         Shuffle => "shuffle",
         SkipBack => "skip-back",
         SkipBackFilled => "skip-back-filled",
@@ -512,6 +564,79 @@ pub fn paint_icon(ui: &egui::Ui, icon: Icon, rect: egui::Rect, size: f32, color:
     icon.image(color, size).paint_at(ui, icon_rect);
 }
 
+/// Paints the official Spotify Encore `CheckAltFill` (green circle with dark checkmark).
+pub fn paint_liked_check(
+    ui: &egui::Ui,
+    center: egui::Pos2,
+    size: f32,
+    circle_color: Color32,
+    check_color: Color32,
+) {
+    let radius = size * 0.48;
+    let painter = ui.painter();
+    painter.circle_filled(center, radius, circle_color);
+    let p1 = center + egui::vec2(-radius * 0.42, radius * 0.02);
+    let p2 = center + egui::vec2(-radius * 0.10, radius * 0.34);
+    let p3 = center + egui::vec2(radius * 0.45, -radius * 0.30);
+    let stroke = Stroke::new((size * 0.11).max(1.6), check_color);
+    painter.line_segment([p1, p2], stroke);
+    painter.line_segment([p2, p3], stroke);
+}
+
+/// Paints the official Spotify Encore liked/save button:
+/// - When `saved` is `true`, draws the green circle (`palette.accent`) with dark checkmark (`palette.on_accent`).
+/// - When `saved` is `false`, draws `Icon::CirclePlus` in `palette.secondary` (hovering `palette.text`).
+pub fn liked_button(
+    ui: &mut egui::Ui,
+    palette: &Palette,
+    saved: bool,
+    size: f32,
+    tooltip: &str,
+) -> Response {
+    if !saved {
+        return icon_button(
+            ui,
+            Icon::CirclePlus,
+            size,
+            palette.secondary,
+            palette.text,
+            tooltip,
+        );
+    }
+    let edge = size + ICON_BUTTON_PAD;
+    let (rect, response) = ui.allocate_exact_size(Vec2::splat(edge), Sense::click());
+    response.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tooltip)
+    });
+    if ui.is_rect_visible(rect) {
+        let fill = if response.hovered() || response.has_focus() {
+            palette.accent_hover
+        } else {
+            palette.accent
+        };
+        let scale = if response.is_pointer_button_down_on() {
+            0.94
+        } else if response.hovered() {
+            1.04
+        } else {
+            1.0
+        };
+        paint_liked_check(ui, rect.center(), size * scale, fill, palette.on_accent);
+    }
+    focus_ring(ui, &response);
+    if tooltip.is_empty() {
+        response
+    } else {
+        response.on_hover_text(tooltip)
+    }
+}
+
+/// Paints the 4px green indicator dot centered beneath active controls in the bottom player bar.
+pub fn paint_active_dot(ui: &egui::Ui, button_rect: egui::Rect, color: Color32) {
+    let dot_pos = egui::pos2(button_rect.center().x, button_rect.bottom() - 2.0);
+    ui.painter().circle_filled(dot_pos, 2.0, color);
+}
+
 /// Make keyboard focus visible without changing the control's layout.
 pub fn focus_ring(ui: &egui::Ui, response: &Response) {
     if response.has_focus() {
@@ -533,6 +658,13 @@ pub fn focus_ring(ui: &egui::Ui, response: &Response) {
 /// centered layout to the box's top edge and the glyph lands off-center.
 pub const ICON_BUTTON_PAD: f32 = 12.0;
 
+pub fn blend(base: Color32, tint: Color32, amount: f32) -> Color32 {
+    let a = egui::Rgba::from(base);
+    let b = egui::Rgba::from(tint);
+    let mixed = a * (1.0 - amount) + b * amount;
+    Color32::from(mixed)
+}
+
 /// A frameless icon control whose colour lifts on hover.
 pub fn icon_button(
     ui: &mut egui::Ui,
@@ -548,15 +680,17 @@ pub fn icon_button(
         egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tooltip)
     });
     if ui.is_rect_visible(rect) {
-        let tint = if response.hovered() || response.has_focus() {
-            hover
-        } else {
-            color
-        };
+        let t = ui.ctx().animate_bool_with_time_and_easing(
+            response.id.with("icon-btn-hover"),
+            response.hovered() || response.has_focus(),
+            0.14,
+            egui::emath::easing::cubic_out,
+        );
+        let tint = blend(color, hover, t);
         let scale = if response.is_pointer_button_down_on() {
             0.92
         } else {
-            1.0
+            1.0 + 0.04 * t
         };
         paint_icon(ui, icon, rect, size * scale, tint);
     }
@@ -627,12 +761,46 @@ pub fn circle_button(
         egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tooltip)
     });
     if ui.is_rect_visible(rect) {
-        let hovered = response.hovered();
-        let grow = if hovered { 1.05 } else { 1.0 };
+        let t = ui.ctx().animate_bool_with_time_and_easing(
+            response.id.with("circle-btn-hover"),
+            response.hovered() || response.has_focus(),
+            0.15,
+            egui::emath::easing::cubic_out,
+        );
+
+        let anim_id = response.id.with("circle-btn-elastic");
+        if response.clicked() {
+            ui.ctx()
+                .data_mut(|d| d.insert_temp(anim_id, std::time::Instant::now()));
+        }
+        let last_click: Option<std::time::Instant> = ui.ctx().data(|d| d.get_temp(anim_id));
+        let click_elapsed = last_click
+            .map(|inst| inst.elapsed().as_secs_f32())
+            .unwrap_or(1.0);
+
+        let base = 1.0 + 0.05 * t;
+        let grow = if response.is_pointer_button_down_on() {
+            0.88
+        } else if click_elapsed < 0.32 {
+            ui.ctx()
+                .request_repaint_after(std::time::Duration::from_millis(16));
+            let p = click_elapsed / 0.32;
+            let settle = 1.0 - (-8.0 * p).exp();
+            let overshoot = (-6.0 * p).exp() * (p * 14.0).sin();
+            0.88 + (base - 0.88) * settle + 0.12 * overshoot
+        } else {
+            base
+        };
+
         let radius = diameter / 2.0 * grow;
-        let fill = if hovered { fill_hover } else { fill };
+        let fill = blend(fill, fill_hover, t);
         ui.painter().circle_filled(rect.center(), radius, fill);
-        let icon_size = diameter * 0.46;
+        let icon_scale = if icon == Icon::PauseFilled {
+            0.66
+        } else {
+            0.46
+        };
+        let icon_size = diameter * icon_scale * grow;
         let offset = play_glyph_offset(icon, icon_size);
         let icon_rect =
             egui::Rect::from_center_size(rect.center() + offset, Vec2::splat(icon_size));
@@ -694,17 +862,23 @@ pub fn pill_button(ui: &mut egui::Ui, palette: &Palette, label: &str, primary: b
         egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), label)
     });
     if ui.is_rect_visible(rect) {
-        let hovered = response.hovered();
+        let t = ui.ctx().animate_bool_with_time_and_easing(
+            response.id.with("pill-btn-hover"),
+            response.hovered() || response.has_focus(),
+            0.14,
+            egui::emath::easing::cubic_out,
+        );
         let radius = rect.height() / 2.0;
+        let scale = if response.is_pointer_button_down_on() {
+            0.96
+        } else {
+            1.0 + 0.02 * t
+        };
         if primary {
-            let fill = if hovered {
-                palette.accent_hover
-            } else {
-                palette.accent
-            };
+            let fill = blend(palette.accent, palette.accent_hover, t);
             ui.painter().rect_filled(rect, radius, fill);
         } else {
-            let stroke_color = if hovered { palette.text } else { palette.dim };
+            let stroke_color = blend(palette.dim, palette.text, t);
             ui.painter().rect_stroke(
                 rect,
                 radius,
@@ -712,7 +886,7 @@ pub fn pill_button(ui: &mut egui::Ui, palette: &Palette, label: &str, primary: b
                 egui::StrokeKind::Inside,
             );
         }
-        let pos = rect.center() - galley.size() / 2.0;
+        let pos = rect.center() - (galley.size() * scale) / 2.0;
         ui.painter().galley(pos, galley, color);
     }
     focus_ring(ui, &response);
@@ -1195,6 +1369,17 @@ mod tests {
             assert!(galley.rows[0].glyphs.len() >= 10);
         });
         output.textures_delta.clear();
+    }
+
+    #[test]
+    fn oled_green_palette_parses_and_identifies_as_oled() {
+        let json = include_str!("../themes/OLED Green.json");
+        let palette: Palette = fastframe_theme::parse_palette(json).expect("valid OLED Green theme");
+        assert!(palette.is_oled());
+        assert_eq!(palette.window, Color32::BLACK);
+        assert_eq!(palette.panel, Color32::BLACK);
+        assert_eq!(palette.text, Color32::WHITE);
+        assert_eq!(palette.accent, Color32::from_rgb(0x1e, 0xd7, 0x60));
     }
 
     /// An animation asking for its next frame in 33 ms gets it in 33 ms, not

@@ -13,6 +13,9 @@ pub use fastframe_update::{
 use fastframe_update::{MacConfig, ReqwestTransport, UpdateConfig};
 
 pub const CONFIG: UpdateConfig = UpdateConfig {
+    portable_executable: Some("Spotify"),
+    legacy_names: &["spotifast", "spotify"],
+    legacy_windows_installs: &["Programs/Spotify/Spotify.exe"],
     macos: MacConfig {
         bundle_ids: &["rocks.spotifast.Spotifast"],
         executable_names: &["Spotifast"],
@@ -22,9 +25,9 @@ pub const CONFIG: UpdateConfig = UpdateConfig {
     // before downloading an update, using the release workflow's public key.
     publisher_key: Some(include_str!("../assets/update-public-key.hex")),
     ..UpdateConfig::new(
-        "crmne/spotifast",
-        "Spotifast",
-        "spotifast",
+        "GUHPY/LiterallySpotify-Spotifast-Mod",
+        "Spotify",
+        "literallyspotify",
         env!("CARGO_PKG_VERSION"),
     )
 };
@@ -43,6 +46,8 @@ mod tests {
     fn update_config_is_valid() {
         CONFIG.validate().unwrap();
         assert_eq!(CONFIG.current_version, env!("CARGO_PKG_VERSION"));
+        assert_eq!(CONFIG.repository, "GUHPY/LiterallySpotify-Spotifast-Mod");
+        assert_eq!(CONFIG.portable_executable, Some("Spotify"));
     }
 
     #[test]

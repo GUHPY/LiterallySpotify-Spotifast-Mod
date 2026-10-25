@@ -3377,3 +3377,448 @@ msgstr ""
 
 #~ msgid "Reduce lyrics motion"
 #~ msgstr "Уменьшить анимацию текста"
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr "Настройте масштаб Spotify под свои предпочтения и потребности."
+
+
+msgid "All"
+msgstr "Все"
+
+
+msgid "Alphabetical"
+msgstr "По алфавиту"
+
+
+msgid "Audiobooks"
+msgstr "Аудиокниги"
+
+
+msgid "Blend"
+msgstr "Синтез"
+
+
+msgid "Browse"
+msgstr "Обзор"
+
+
+msgid "Clear recent searches"
+msgstr "Очистить недавние запросы"
+
+
+msgid "Collapse Your Library"
+msgstr "Свернуть медиатеку"
+
+
+msgid "Compact grid"
+msgstr "Компактная сетка"
+
+
+msgid "Compact list"
+msgstr "Компактный список"
+
+
+msgid "Connect"
+msgstr "Подключиться"
+
+
+msgid "Creator"
+msgstr "Автор"
+
+
+msgid "Default"
+msgstr "По умолчанию"
+
+
+msgid "Dense"
+msgstr "Компактный"
+
+
+msgid "Don't see your device?"
+msgstr "Не видите свое устройство?"
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr "Рисовать собственную строку заголовка и кнопки окна Spotify вместо элементов окружения рабочего стола."
+
+
+msgid "Enter full screen"
+msgstr "Полноэкранный режим"
+
+
+msgid "Expand Your Library"
+msgstr "Развернуть медиатеку"
+
+
+msgid "Friend Activity"
+msgstr "Активность друзей"
+
+
+msgid "Go back"
+msgstr "Назад"
+
+
+msgid "Go forward"
+msgstr "Вперед"
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr "Управляйте активностью в приложении Spotify: Настройки > Прослушивание и статистика."
+
+
+msgid "Hide"
+msgstr "Скрыть"
+
+
+msgid "Jam"
+msgstr "Jam"
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr "Покажите друзьям и подписчикам в Spotify, что вы слушаете."
+
+
+msgid "Listen now"
+msgstr "Слушать"
+
+
+msgid "Listen together from anywhere"
+msgstr "Слушайте вместе откуда угодно"
+
+
+msgid "Listening activity"
+msgstr "История прослушивания"
+
+
+msgid "Lyrics preview"
+msgstr "Предпросмотр текста"
+
+
+msgid "Made for"
+msgstr "Для"
+
+
+msgid "Menu"
+msgstr "Меню"
+
+
+msgid "Mixed playlist"
+msgstr "Микс-плейлист"
+
+
+msgid "More options"
+msgstr "Другие параметры"
+
+
+msgid "Music"
+msgstr "Музыка"
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr "Музыка на этом компьютере остановится при перезапуске Spotify."
+
+
+msgid "Music video"
+msgstr "Клип"
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr "Новые релизы появятся здесь. Подпишитесь на любимых исполнителей и подкасты, чтобы ничего не пропустить."
+
+
+msgid "No other devices found"
+msgstr "Другие устройства не найдены"
+
+
+msgid "On other networks"
+msgstr "В других сетях"
+
+
+msgid "Open Miniplayer"
+msgstr "Открыть мини-плеер"
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr "Для воспроизведения нужен Spotify Premium. С бесплатным аккаунтом можно просматривать и искать, но не слушать музыку в Spotify."
+
+
+msgid "Podcasts and shows"
+msgstr "Подкасты и шоу"
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr "Популярные треки и рекомендации для вас."
+
+
+msgid "Popular songs and trending stations"
+msgstr "Популярные треки и станции"
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr "Spotify не предоставляет этому клиенту реальную активность друзей."
+
+
+msgid "Related music videos"
+msgstr "Похожие клипы"
+
+
+msgid "Reset"
+msgstr "Сбросить"
+
+
+msgid "Saved & downloaded"
+msgstr "Сохранено и скачано"
+
+
+msgid "Show all"
+msgstr "Показать все"
+
+
+msgid "Show more"
+msgstr "Показать еще"
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr "Вход выполняется в браузере. Spotify никогда не видит твой пароль. Для локального воспроизведения нужен Spotify Premium."
+
+
+msgid "Song"
+msgstr "Трек"
+
+
+msgid "Spacious"
+msgstr "Просторный"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr "Spotify сворачивается в системный трей. Выйти можно через меню трея или по Cmd+Q."
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr "Spotify сворачивается в системный трей. Выйти можно через меню трея или по Ctrl+Q."
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr "Стандартное подключение Spotify делит лимит запросов Spotify с другими слушателями. При высокой нагрузке музыка загружается, а кнопки управления срабатывают медленнее."
+
+
+msgid "Standard grid"
+msgstr "Обычная сетка"
+
+
+msgid "Standard list"
+msgstr "Обычный список"
+
+
+msgid "Start a Jam"
+msgstr "Начать Jam"
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr "Новые релизы исполнителей, подкастов и шоу, на которые вы подписаны."
+
+
+msgid "There are no new releases for you right now."
+msgstr "Пока для вас нет новых релизов."
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr "Spotify не предоставляет эти функции этому клиенту."
+
+
+msgid "This computer"
+msgstr "Этот компьютер"
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr "Громкость этого устройства нельзя изменить из Spotify"
+
+
+msgid "What's New"
+msgstr "Что нового"
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr "Масштаб также можно изменить с помощью Cmd+- или Cmd++."
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr "Масштаб также можно изменить с помощью Ctrl+- или Ctrl++."
+
+
+msgid "Your Episodes"
+msgstr "Мои выпуски"
+
+
+msgid "Your Library"
+msgstr "Моя медиатека"
+
+
+msgid "Zoom level"
+msgstr "Масштаб"
+
+
+msgid "Bass Booster"
+msgstr "Усиление басов"
+
+
+msgid "Bass Reducer"
+msgstr "Ослабление басов"
+
+
+msgid "Classical"
+msgstr "Классика"
+
+
+msgid "Club"
+msgstr "Клуб"
+
+
+msgid "Custom"
+msgstr "Пользовательский"
+
+
+msgid "Dance"
+msgstr "Танцевальная"
+
+
+msgid "Flat"
+msgstr "Ровный"
+
+
+msgid "Full Bass"
+msgstr "Мощные басы"
+
+
+msgid "Full Bass & Treble"
+msgstr "Мощные басы и высокие частоты"
+
+
+msgid "Full Treble"
+msgstr "Мощные высокие частоты"
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr "Динамики ноутбука / Наушники"
+
+
+msgid "Large Hall"
+msgstr "Большой зал"
+
+
+msgid "Live"
+msgstr "Концерт"
+
+
+msgid "Loudness"
+msgstr "Тонкомпенсация"
+
+
+msgid "Night Listening"
+msgstr "Ночное прослушивание"
+
+
+msgid "Party"
+msgstr "Вечеринка"
+
+
+msgid "Pop"
+msgstr "Поп"
+
+
+msgid "Recents"
+msgstr "Недавние"
+
+
+msgid "Reggae"
+msgstr "Регги"
+
+
+msgid "Rock"
+msgstr "Рок"
+
+
+msgid "Ska"
+msgstr "Ска"
+
+
+msgid "Small Speakers"
+msgstr "Маленькие динамики"
+
+
+msgid "Soft"
+msgstr "Мягкий"
+
+
+msgid "Soft Rock"
+msgstr "Софт-рок"
+
+
+msgid "Sort by"
+msgstr "Сортировать по"
+
+
+msgid "Spoken Word"
+msgstr "Речь"
+
+
+msgid "Techno"
+msgstr "Техно"
+
+
+msgid "Treble Booster"
+msgstr "Усиление высоких частот"
+
+
+msgid "View as"
+msgstr "Вид"
+
+
+msgid "Vocal Booster"
+msgstr "Усиление вокала"
+
+
+msgid "Show Now Playing view"
+msgstr "Показать экран Сейчас играет"
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr "Объедините музыкальные вкусы друзей в одном плейлисте"
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr "Создайте плейлист с треками или выпусками"
+
+
+msgid "Mix songs with smooth transitions"
+msgstr "Миксуйте треки с плавными переходами"
+
+
+msgid "Organize your playlists"
+msgstr "Упорядочьте свои плейлисты"
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr "Об исполнителе"
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr "Участники записи"
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr "Далее"
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr "Открыть очередь"
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr "Участники записи"

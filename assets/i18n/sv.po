@@ -3339,3 +3339,448 @@ msgstr ""
 
 #~ msgid "Reduce lyrics motion"
 #~ msgstr "Minska låttextrörelse"
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr "Anpassa zoomnivån i Spotify efter dina önskemål och behov."
+
+
+msgid "All"
+msgstr "Alla"
+
+
+msgid "Alphabetical"
+msgstr "Alfabetiskt"
+
+
+msgid "Audiobooks"
+msgstr "Ljudböcker"
+
+
+msgid "Blend"
+msgstr "Blend"
+
+
+msgid "Browse"
+msgstr "Bläddra"
+
+
+msgid "Clear recent searches"
+msgstr "Rensa senaste sökningar"
+
+
+msgid "Collapse Your Library"
+msgstr "Dölj ditt bibliotek"
+
+
+msgid "Compact grid"
+msgstr "Kompakt rutnät"
+
+
+msgid "Compact list"
+msgstr "Kompakt lista"
+
+
+msgid "Connect"
+msgstr "Anslut"
+
+
+msgid "Creator"
+msgstr "Skapare"
+
+
+msgid "Default"
+msgstr "Standard"
+
+
+msgid "Dense"
+msgstr "Kompakt"
+
+
+msgid "Don't see your device?"
+msgstr "Ser du inte din enhet?"
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr "Rita Spotifys egen namnlist och fönsterknappar i stället för skrivbordsmiljöns."
+
+
+msgid "Enter full screen"
+msgstr "Visa helskärm"
+
+
+msgid "Expand Your Library"
+msgstr "Visa ditt bibliotek"
+
+
+msgid "Friend Activity"
+msgstr "Vänaktivitet"
+
+
+msgid "Go back"
+msgstr "Tillbaka"
+
+
+msgid "Go forward"
+msgstr "Framåt"
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr "Hantera din lyssningsaktivitet i Spotify-appen under Inställningar > Lyssningsaktivitet och statistik."
+
+
+msgid "Hide"
+msgstr "Dölj"
+
+
+msgid "Jam"
+msgstr "Jam"
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr "Låt dina vänner och följare på Spotify se vad du lyssnar på."
+
+
+msgid "Listen now"
+msgstr "Lyssna nu"
+
+
+msgid "Listen together from anywhere"
+msgstr "Lyssna tillsammans var ni än är"
+
+
+msgid "Listening activity"
+msgstr "Lyssningsaktivitet"
+
+
+msgid "Lyrics preview"
+msgstr "Förhandsvisning av låttext"
+
+
+msgid "Made for"
+msgstr "Skapat för"
+
+
+msgid "Menu"
+msgstr "Meny"
+
+
+msgid "Mixed playlist"
+msgstr "Mixad spellista"
+
+
+msgid "More options"
+msgstr "Fler alternativ"
+
+
+msgid "Music"
+msgstr "Musik"
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr "Musik som spelas på den här datorn stoppas när Spotify startar om."
+
+
+msgid "Music video"
+msgstr "Musikvideo"
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr "Nya släpp visas här. Följ dina favoritartister och poddar för att hålla dig uppdaterad."
+
+
+msgid "No other devices found"
+msgstr "Inga andra enheter hittades"
+
+
+msgid "On other networks"
+msgstr "På andra nätverk"
+
+
+msgid "Open Miniplayer"
+msgstr "Öppna minispelaren"
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr "Uppspelning kräver Spotify Premium. Free-konton kan bläddra och söka men inte spela musik via Spotify."
+
+
+msgid "Podcasts and shows"
+msgstr "Poddar och program"
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr "Populära låtar och rekommendationer för dig."
+
+
+msgid "Popular songs and trending stations"
+msgstr "Populära låtar och trendiga stationer"
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr "Spotify tillhandahåller inte riktig vänaktivitet för den här klienten."
+
+
+msgid "Related music videos"
+msgstr "Relaterade musikvideor"
+
+
+msgid "Reset"
+msgstr "Återställ"
+
+
+msgid "Saved & downloaded"
+msgstr "Sparat och nedladdat"
+
+
+msgid "Show all"
+msgstr "Visa alla"
+
+
+msgid "Show more"
+msgstr "Visa mer"
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr "Logga in via webbläsaren. Spotify ser aldrig ditt lösenord. Lokal uppspelning kräver Spotify Premium."
+
+
+msgid "Song"
+msgstr "Låt"
+
+
+msgid "Spacious"
+msgstr "Rymlig"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr "Spotify göms i systemfältet. Avsluta från systemfältets meny eller med Cmd+Q."
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr "Spotify göms i systemfältet. Avsluta från systemfältets meny eller med Ctrl+Q."
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr "Spotifys standardanslutning delar Spotifys gräns för förfrågningar med andra lyssnare. Vid hög belastning kan det ta längre tid att läsa in musik och använda uppspelningskontrollerna."
+
+
+msgid "Standard grid"
+msgstr "Standardrutnät"
+
+
+msgid "Standard list"
+msgstr "Standardlista"
+
+
+msgid "Start a Jam"
+msgstr "Starta en Jam"
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr "De senaste släppen från artister, poddar och program du följer."
+
+
+msgid "There are no new releases for you right now."
+msgstr "Det finns inga nya släpp för dig just nu."
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr "Spotify gör inte dessa funktioner tillgängliga för den här klienten."
+
+
+msgid "This computer"
+msgstr "Den här datorn"
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr "Volymen på den här enheten kan inte ändras från Spotify"
+
+
+msgid "What's New"
+msgstr "Nyheter"
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr "Du kan också ändra zoom med Cmd+- eller Cmd++."
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr "Du kan också ändra zoom med Ctrl+- eller Ctrl++."
+
+
+msgid "Your Episodes"
+msgstr "Dina avsnitt"
+
+
+msgid "Your Library"
+msgstr "Ditt bibliotek"
+
+
+msgid "Zoom level"
+msgstr "Zoomnivå"
+
+
+msgid "Bass Booster"
+msgstr "Basförstärkning"
+
+
+msgid "Bass Reducer"
+msgstr "Basreducering"
+
+
+msgid "Classical"
+msgstr "Klassiskt"
+
+
+msgid "Club"
+msgstr "Klubb"
+
+
+msgid "Custom"
+msgstr "Anpassad"
+
+
+msgid "Dance"
+msgstr "Dans"
+
+
+msgid "Flat"
+msgstr "Neutral"
+
+
+msgid "Full Bass"
+msgstr "Kraftig bas"
+
+
+msgid "Full Bass & Treble"
+msgstr "Kraftig bas och diskant"
+
+
+msgid "Full Treble"
+msgstr "Kraftig diskant"
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr "Laptop-högtalare / Hörlurar"
+
+
+msgid "Large Hall"
+msgstr "Stor sal"
+
+
+msgid "Live"
+msgstr "Live"
+
+
+msgid "Loudness"
+msgstr "Ljudstyrka"
+
+
+msgid "Night Listening"
+msgstr "Nattlyssning"
+
+
+msgid "Party"
+msgstr "Fest"
+
+
+msgid "Pop"
+msgstr "Pop"
+
+
+msgid "Recents"
+msgstr "Senaste"
+
+
+msgid "Reggae"
+msgstr "Reggae"
+
+
+msgid "Rock"
+msgstr "Rock"
+
+
+msgid "Ska"
+msgstr "Ska"
+
+
+msgid "Small Speakers"
+msgstr "Små högtalare"
+
+
+msgid "Soft"
+msgstr "Mjuk"
+
+
+msgid "Soft Rock"
+msgstr "Mjukrock"
+
+
+msgid "Sort by"
+msgstr "Sortera efter"
+
+
+msgid "Spoken Word"
+msgstr "Tal"
+
+
+msgid "Techno"
+msgstr "Techno"
+
+
+msgid "Treble Booster"
+msgstr "Diskantförstärkning"
+
+
+msgid "View as"
+msgstr "Visa som"
+
+
+msgid "Vocal Booster"
+msgstr "Röstförstärkning"
+
+
+msgid "Show Now Playing view"
+msgstr "Visa vyn Spelas nu"
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr "Samla dina vänners musiksmak i en spellista"
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr "Skapa en spellista med låtar eller avsnitt"
+
+
+msgid "Mix songs with smooth transitions"
+msgstr "Mixa låtar med mjuka övergångar"
+
+
+msgid "Organize your playlists"
+msgstr "Organisera dina spellistor"
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr "Om artisten"
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr "Medverkande"
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr "Härnäst"
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr "Öppna kön"
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr "Visa medverkande"

@@ -506,6 +506,8 @@ pub struct App {
     /// positioned itself at all for this track.
     pub lyrics_line_shown: Option<Option<usize>>,
     pub show_devices: bool,
+    pub show_friend_activity: bool,
+    pub jam_active: bool,
     pub toasts: Vec<Toast>,
     pub actions: Vec<Action>,
     volume_before_mute: Option<u8>,
@@ -683,7 +685,7 @@ const RECENTS_PAGE: u32 = 50;
 /// Who the desktop's media controls belong to. Links to Spotify, as
 /// `spotify:` URIs or web addresses, are what they may ask Spotifast to open.
 fn media_app() -> fastframe_now_playing::App {
-    let mut app = fastframe_now_playing::App::new("spotifast", "Spotifast");
+    let mut app = fastframe_now_playing::App::new("spotify", "Spotify");
     app.uri_schemes = vec!["spotify".into(), "https".into(), "http".into()];
     app
 }
@@ -744,14 +746,14 @@ fn play_pause_label(playing: bool) -> &'static str {
 fn tray_config() -> fastframe_tray::Config {
     use fastframe_tray::MenuItem;
     fastframe_tray::Config {
-        id: "spotifast",
-        title: "Spotifast".into(),
+        id: "Spotify",
+        title: "Spotify".into(),
         icon: util::app_icon_rgba,
         template_icon: Some(util::tray_template_rgba),
         themed_icon: true,
         menu_on_click: false,
         menu: vec![
-            MenuItem::action(TRAY_SHOW, "Show or hide Spotifast"),
+            MenuItem::action(TRAY_SHOW, "Show or hide Spotify"),
             MenuItem::Separator,
             MenuItem::action(TRAY_PLAY_PAUSE, play_pause_label(false)),
             MenuItem::action(TRAY_NEXT, "Next"),
@@ -1014,6 +1016,8 @@ impl App {
             lyrics_following: true,
             lyrics_line_shown: None,
             show_devices: false,
+            show_friend_activity: false,
+            jam_active: false,
             toasts: Vec::new(),
             actions: Vec::new(),
             volume_before_mute: None,
@@ -1133,6 +1137,7 @@ impl App {
         ctx.set_theme(self.theme_preference());
         self.applied_dark = None;
         self.winamp.forget_textures();
+        self.lyrics_backdrop.forget_textures();
         self.window_hidden = false;
         self.hide_intent = false;
         self.wants_show = false;
@@ -1182,6 +1187,7 @@ impl App {
     /// media controls keep running until Show or Quit.
     pub fn window_gone(&mut self) {
         self.winamp.forget_textures();
+        self.lyrics_backdrop.forget_textures();
         self.window_hidden = true;
         self.hide_intent = false;
         self.wants_show = false;
@@ -2497,6 +2503,9 @@ impl App {
                     self.refresh_queue(true);
                 }
             }
+            Page::WhatsNew => {
+                self.load_home(false);
+            }
             Page::Settings => {}
         }
     }
@@ -3358,7 +3367,7 @@ impl App {
     #[cfg(feature = "milkdrop")]
     fn sync_milkdrop(&mut self, ctx: &egui::Context) {
         let presets = self.dirs.milkdrop_dir();
-        let open = self.settings.milkdrop_open;
+        let open = self.settings.milkdrop_open && self.settings.winamp_window;
         let size = self.settings.milkdrop_size;
         let pos = self.milkdrop_pos;
         let fullscreen = self.settings.milkdrop_fullscreen;
@@ -4546,6 +4555,20 @@ impl App {
                     self.refresh_queue(true);
                 }
             }
+            Page::WhatsNew => {
+                if self.network_reachable {
+                    self.load_home(false);
+                    if !self.library.albums.loaded_once {
+                        self.load_more(Page::Albums);
+                    }
+                    if !self.library.episodes.loaded_once {
+                        self.load_more(Page::Episodes);
+                    }
+                    if !self.library.shows.loaded_once {
+                        self.load_more(Page::Podcasts);
+                    }
+                }
+            }
             Page::Settings => {}
         }
     }
@@ -5513,7 +5536,8 @@ impl App {
         self.search.edit_run += 1;
         let serial = self.search.serial;
         self.run_search(query);
-        if self.search.serial != serial
+        if self.search.committed == self.search.query.trim()
+            || self.search.serial != serial
             || self.search.catalogue_pending
             || self.search.playlists_pending
         {
@@ -5526,6 +5550,9 @@ impl App {
     /// same run recorded takes its place instead of adding another. Only an
     /// entry the run itself added is replaced.
     fn remember_search(&mut self, query: &str) {
+        if self.search.history_item_serial == Some(self.search.serial) {
+            return;
+        }
         let query = query.trim();
         if let Some((run, typing)) = self.search.committed_run
             && self.search.typed_entry != Some((run, query.to_string()))
@@ -9449,11 +9476,11 @@ impl App {
 
     fn leave_lyrics_fullscreen(&mut self, ctx: &egui::Context) {
         if let Some(was_fullscreen) = self.lyrics_fullscreen.take() {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(was_fullscreen));
-            if self.lyrics_restore_maximized {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(true));
+            if ctx.input(|input| input.viewport().fullscreen.unwrap_or(false)) != was_fullscreen {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(was_fullscreen));
             }
-            self.lyrics_fullscreen_restoring = Some(was_fullscreen);
+            self.lyrics_fullscreen_restoring = None;
+            self.lyrics_restore_maximized = false;
             self.lyrics_fullscreen_seen = false;
             self.lyrics_line_shown = None;
         }
@@ -9491,6 +9518,14 @@ impl App {
             Action::PrepareTint(url) => {
                 if self.settings.accent_from_art {
                     self.tint_for(Some(&url));
+                }
+            }
+            Action::LoadArtist(id) => {
+                let page = self.artist_pages.entry(id.clone()).or_default();
+                if matches!(page.artist, Loadable::NotLoaded) && self.network_reachable {
+                    page.artist = Loadable::Loading;
+                    self.backend.api(ApiRequest::Artist { id: id.clone() });
+                    self.request_contains(vec![format!("spotify:artist:{id}")]);
                 }
             }
             Action::OpenUri(uri) => {
@@ -10117,7 +10152,37 @@ impl App {
             Action::EndSearchRun => self.search.edit_run += 1,
             Action::ForgetSearch(query) => {
                 self.settings.search_history.retain(|entry| entry != &query);
+                self.settings.forget_recent_item(&query);
                 self.settings_dirty = true;
+                self.save_settings();
+            }
+            Action::RememberRecentItem(item) => {
+                self.search.history_item_serial = Some(self.search.serial);
+                let cur_query = self.search.query.trim().to_string();
+                if !cur_query.is_empty() {
+                    self.settings
+                        .search_history
+                        .retain(|q| !q.eq_ignore_ascii_case(&cur_query));
+                }
+                let committed = self.search.committed.trim().to_string();
+                if !committed.is_empty() {
+                    self.settings
+                        .search_history
+                        .retain(|q| !q.eq_ignore_ascii_case(&committed));
+                }
+                self.settings.remember_recent_item(item);
+                self.settings_dirty = true;
+                self.save_settings();
+            }
+            Action::ForgetRecentItem(key) => {
+                self.settings.forget_recent_item(&key);
+                self.settings_dirty = true;
+                self.save_settings();
+            }
+            Action::ClearRecentItems => {
+                self.settings.clear_recent_items();
+                self.settings_dirty = true;
+                self.save_settings();
             }
             Action::SetSearchFilter(filter) => self.search.filter = filter,
             Action::FocusSearch => {
@@ -10204,20 +10269,52 @@ impl App {
                 self.settings_dirty = true;
             }
             Action::ToggleQueuePanel => {
-                self.show_queue_panel = !self.show_queue_panel;
                 if self.show_queue_panel {
+                    self.show_queue_panel = false;
+                    self.show_devices = false;
+                    self.show_friend_activity = false;
+                    self.show_lyrics_panel = true;
+                } else {
+                    self.show_queue_panel = true;
+                    self.show_devices = false;
+                    self.show_friend_activity = false;
                     self.show_lyrics_panel = false;
                     self.refresh_queue(true);
                 }
             }
             Action::ToggleLyricsPanel => {
                 self.leave_lyrics_fullscreen(ctx);
-                self.show_lyrics_panel = !self.show_lyrics_panel;
-                if self.show_lyrics_panel {
+                if self.show_queue_panel || self.show_devices || self.show_friend_activity {
                     self.show_queue_panel = false;
+                    self.show_devices = false;
+                    self.show_friend_activity = false;
+                    self.show_lyrics_panel = true;
                     self.lyrics_following = true;
                     self.request_lyrics();
+                } else {
+                    self.show_lyrics_panel = !self.show_lyrics_panel;
+                    if self.show_lyrics_panel {
+                        self.lyrics_following = true;
+                        self.request_lyrics();
+                    }
                 }
+            }
+            Action::ToggleFriendActivity => {
+                self.leave_lyrics_fullscreen(ctx);
+                if self.show_friend_activity {
+                    self.show_friend_activity = false;
+                    self.show_queue_panel = false;
+                    self.show_devices = false;
+                    self.show_lyrics_panel = true;
+                } else {
+                    self.show_friend_activity = true;
+                    self.show_queue_panel = false;
+                    self.show_devices = false;
+                    self.show_lyrics_panel = false;
+                }
+            }
+            Action::ToggleJam => {
+                self.toast(gettext(self.locale, "These features are not available to this client through Spotify."));
             }
             Action::SetLyricsFullscreen(fullscreen) => {
                 if fullscreen && self.lyrics_fullscreen.is_none() {
@@ -10225,25 +10322,14 @@ impl App {
                         Some(self.lyrics_fullscreen_restoring.take().unwrap_or_else(|| {
                             ctx.input(|input| input.viewport().fullscreen.unwrap_or(false))
                         }));
-                    #[cfg(windows)]
-                    {
-                        // Winit's undecorated maximized Windows client area is
-                        // constrained to the work area, even in fullscreen.
-                        // Clear maximization before entering, then restore it
-                        // together with the original window mode on exit.
-                        self.lyrics_restore_maximized |= self.lyrics_fullscreen == Some(false)
-                            && ctx.input(|input| input.viewport().maximized.unwrap_or(false));
-                        if self.lyrics_restore_maximized {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(false));
-                        }
-                    }
                     self.lyrics_fullscreen_seen = false;
                     self.show_lyrics_panel = true;
                     self.show_queue_panel = false;
+                    self.show_devices = false;
+                    self.show_friend_activity = false;
                     self.lyrics_following = true;
                     self.lyrics_line_shown = None;
                     self.request_lyrics();
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(true));
                 } else if !fullscreen {
                     self.leave_lyrics_fullscreen(ctx);
                 }
@@ -10262,8 +10348,16 @@ impl App {
             Action::PauseLyricsFollow => self.lyrics_following = false,
             Action::RetryLyrics => self.request_lyrics(),
             Action::ToggleDevicesPopup => {
-                self.show_devices = !self.show_devices;
                 if self.show_devices {
+                    self.show_devices = false;
+                    self.show_queue_panel = false;
+                    self.show_friend_activity = false;
+                    self.show_lyrics_panel = true;
+                } else {
+                    self.show_devices = true;
+                    self.show_queue_panel = false;
+                    self.show_friend_activity = false;
+                    self.show_lyrics_panel = false;
                     self.refresh_devices();
                     // Receivers waiting on the network are invisible to the
                     // Web API, so look for them ourselves.
@@ -10323,8 +10417,23 @@ impl App {
                     self.mark_settings_dirty();
                 }
             }
+            Action::SetLibraryView(view) => {
+                self.settings.set_library_view(view);
+                self.mark_settings_dirty();
+            }
             Action::SetLibraryGrid(grid) => {
-                self.settings.sidebar_grid = grid;
+                let view = if grid {
+                    if self.settings.library_view().is_compact() {
+                        crate::settings::LibraryView::CompactGrid
+                    } else {
+                        crate::settings::LibraryView::StandardGrid
+                    }
+                } else if self.settings.library_view().is_compact() {
+                    crate::settings::LibraryView::CompactList
+                } else {
+                    crate::settings::LibraryView::StandardList
+                };
+                self.settings.set_library_view(view);
                 self.mark_settings_dirty();
             }
             Action::ToggleLibraryFolder(id) => {
@@ -11030,7 +11139,10 @@ impl App {
         }
         if self.settings.winamp_window {
             self.winamp.geometry.remember(ctx);
-        } else if self.lyrics_fullscreen.is_none() && self.lyrics_fullscreen_restoring.is_none() {
+        } else if self.lyrics_fullscreen.is_none()
+            && self.lyrics_fullscreen_restoring.is_none()
+            && !crate::window::main_window_needs_size_recovery(ctx)
+        {
             self.window_geometry.remember(ctx);
         }
     }
@@ -11270,9 +11382,9 @@ impl App {
     /// Keeps the current track in the window and taskbar title (#94).
     fn sync_window_title(&mut self, ctx: &egui::Context) {
         let title = match self.now_playing().filter(|now| now.playing) {
-            Some(now) if now.subtitle.is_empty() => format!("{} - Spotifast", now.title),
+            Some(now) if now.subtitle.is_empty() => format!("{} - Spotify", now.title),
             Some(now) => format!("{} - {}", now.subtitle, now.title),
-            None => "Spotifast".to_string(),
+            None => "Spotify".to_string(),
         };
         if title != self.window_title {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
@@ -11313,7 +11425,7 @@ impl App {
             if ctx.input(|input| input.viewport().fullscreen.unwrap_or(false)) {
                 self.lyrics_fullscreen_seen = true;
             } else if self.lyrics_fullscreen_seen {
-                self.leave_lyrics_fullscreen(ctx);
+                self.lyrics_fullscreen_seen = false;
             }
         }
         // Switch to the main window when sign-in is required.
@@ -12446,6 +12558,7 @@ mod tests {
                     crate::ui::widgets::shelf(
                         ui,
                         &app.palette,
+                        app.locale,
                         "wheel-test-shelf",
                         "Shelf",
                         |ui| {
@@ -20250,12 +20363,12 @@ mod tests {
                     }
                 })
                 .collect();
-            assert_eq!(commands, vec![true, was_fullscreen]);
+            assert!(commands.is_empty());
         }
     }
 
     #[test]
-    fn native_fullscreen_exit_restores_the_previous_window_mode() {
+    fn native_fullscreen_exit_keeps_the_lyrics_view_open() {
         for was_fullscreen in [false, true] {
             let mut app = headless_app();
             app.lyrics_fullscreen = Some(was_fullscreen);
@@ -20270,7 +20383,7 @@ mod tests {
                 .fullscreen = Some(false);
             let mut output = ctx.run_ui(input, |ui| app.frame_ui(ui));
             output.textures_delta.clear();
-            assert_eq!(app.lyrics_fullscreen, None);
+            assert_eq!(app.lyrics_fullscreen, Some(was_fullscreen));
             assert!(!app.lyrics_fullscreen_seen);
             let commands: Vec<_> = output.viewport_output[&egui::ViewportId::ROOT]
                 .commands
@@ -20283,7 +20396,44 @@ mod tests {
                     }
                 })
                 .collect();
-            assert_eq!(commands, vec![was_fullscreen]);
+            assert!(commands.is_empty());
+        }
+    }
+
+    #[test]
+    fn collapsing_lyrics_restores_the_native_fullscreen_state() {
+        for (was_fullscreen, current) in [(false, true), (true, false), (false, false), (true, true)] {
+            let mut app = headless_app();
+            app.lyrics_fullscreen = Some(was_fullscreen);
+            let ctx = egui::Context::default();
+            let mut input = egui::RawInput::default();
+            input
+                .viewports
+                .get_mut(&egui::ViewportId::ROOT)
+                .unwrap()
+                .fullscreen = Some(current);
+            let mut output = ctx.run_ui(input, |ui| {
+                app.apply(Action::SetLyricsFullscreen(false), ui.ctx())
+            });
+            output.textures_delta.clear();
+            let commands: Vec<_> = output.viewport_output[&egui::ViewportId::ROOT]
+                .commands
+                .iter()
+                .filter_map(|command| match command {
+                    egui::ViewportCommand::Fullscreen(value) => Some(*value),
+                    _ => None,
+                })
+                .collect();
+            assert_eq!(
+                commands,
+                if was_fullscreen == current {
+                    vec![]
+                } else {
+                    vec![was_fullscreen]
+                }
+            );
+            assert!(app.lyrics_fullscreen.is_none());
+            app.backend.shutdown();
         }
     }
 
@@ -20296,26 +20446,7 @@ mod tests {
         app.lyrics_fullscreen_seen = true;
         app.window_geometry.size = Some([900.0, 650.0]);
         app.window_geometry.position = Some([100.0, 80.0]);
-        // Escape is applied while the viewport still reports the old screen.
         app.actions.push(Action::SetLyricsFullscreen(false));
-        for _ in 0..2 {
-            let mut input = egui::RawInput::default();
-            let viewport = input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap();
-            viewport.fullscreen = Some(true);
-            viewport.inner_rect = Some(egui::Rect::from_min_size(
-                egui::Pos2::ZERO,
-                egui::vec2(1920.0, 1080.0),
-            ));
-            viewport.outer_rect = viewport.inner_rect;
-            let mut output = ctx.run_ui(input, |ui| {
-                app.frame_ui(ui);
-                app.remember_geometry(ui.ctx());
-            });
-            output.textures_delta.clear();
-            assert_eq!(app.lyrics_fullscreen, None);
-            assert_eq!(app.window_geometry.size, Some([900.0, 650.0]));
-            assert_eq!(app.window_geometry.position, Some([100.0, 80.0]));
-        }
         let mut input = egui::RawInput::default();
         let viewport = input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap();
         viewport.fullscreen = Some(false);
@@ -20329,6 +20460,7 @@ mod tests {
             app.remember_geometry(ui.ctx());
         });
         output.textures_delta.clear();
+        assert_eq!(app.lyrics_fullscreen, None);
         assert_eq!(app.window_geometry.size, Some([940.0, 680.0]));
         assert_eq!(app.window_geometry.position, Some([120.0, 100.0]));
         app.backend.shutdown();
@@ -20344,7 +20476,7 @@ mod tests {
             .viewports
             .get_mut(&egui::ViewportId::ROOT)
             .unwrap()
-            .fullscreen = Some(true);
+            .fullscreen = Some(false);
         let mut output = ctx.run_ui(input, |ui| {
             app.apply(Action::SetLyricsFullscreen(false), ui.ctx());
             app.apply(Action::SetLyricsFullscreen(true), ui.ctx());
@@ -20370,7 +20502,7 @@ mod tests {
             app.apply(Action::SetLyricsFullscreen(false), ui.ctx());
         });
         output.textures_delta.clear();
-        assert_eq!(
+        assert!(
             output.viewport_output[&egui::ViewportId::ROOT]
                 .commands
                 .iter()
@@ -20380,37 +20512,9 @@ mod tests {
                         egui::ViewportCommand::Maximized(_) | egui::ViewportCommand::Fullscreen(_)
                     )
                 })
-                .cloned()
-                .collect::<Vec<_>>(),
-            vec![
-                egui::ViewportCommand::Maximized(false),
-                egui::ViewportCommand::Fullscreen(true),
-                egui::ViewportCommand::Fullscreen(false),
-                egui::ViewportCommand::Maximized(true),
-            ]
+                .count()
+                == 0
         );
-        app.window_geometry.size = Some([900.0, 650.0]);
-        // A native exit can report windowed before maximization catches up.
-        // Do not save that intermediate size over the restored geometry.
-        for maximized in [false, true] {
-            let mut input = egui::RawInput::default();
-            let viewport = input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap();
-            viewport.fullscreen = Some(false);
-            viewport.maximized = Some(maximized);
-            viewport.inner_rect = Some(egui::Rect::from_min_size(
-                egui::Pos2::ZERO,
-                egui::vec2(1440.0, 852.0),
-            ));
-            let mut output = ctx.run_ui(input, |ui| {
-                app.frame_ui(ui);
-                app.remember_geometry(ui.ctx());
-            });
-            output.textures_delta.clear();
-            assert_eq!(app.lyrics_fullscreen_restoring.is_none(), maximized);
-            // Maximized keeps the normal size behind it, to restore to.
-            assert_eq!(app.window_geometry.size, Some([900.0, 650.0]));
-            assert_eq!(app.window_geometry.maximized, maximized);
-        }
         app.backend.shutdown();
     }
 
@@ -20463,11 +20567,54 @@ mod tests {
         output.textures_delta.clear();
         assert!(!app.show_lyrics_panel);
         assert_eq!(app.lyrics_fullscreen, None);
-        assert!(
-            output.viewport_output[&egui::ViewportId::ROOT]
-                .commands
-                .contains(&egui::ViewportCommand::Fullscreen(false))
-        );
+    }
+
+    #[test]
+    fn a_selected_search_song_survives_reload_and_replaces_only_its_query() {
+        let mut app = headless_app();
+        let root = std::env::temp_dir().join(format!("spotifast-recent-song-{}", std::process::id()));
+        app.dirs.config = root.clone();
+        app.search.query = "watch da".into();
+        app.search.committed = "watch da".into();
+        app.search.committed_run = Some((17, true));
+        app.search.serial = 17;
+        app.settings.search_history = vec!["watch da".into(), "older".into()];
+        let item = crate::settings::RecentSearchItem {
+            title: "Watch Da Throne".into(),
+            subtitle: "Key Glock".into(),
+            uri: "spotify:track:chosen-song".into(),
+            ..Default::default()
+        };
+        app.actions.push(Action::RememberRecentItem(item.clone()));
+        app.apply_actions(&egui::Context::default());
+        app.remember_search("watch da");
+        assert_eq!(app.settings.search_history, ["older"]);
+        assert_eq!(app.settings.recent_searches[0].uri, item.uri);
+        let path = app.dirs.settings_file();
+        let deadline = Instant::now() + Duration::from_secs(3);
+        let reloaded = loop {
+            if let Ok(bytes) = std::fs::read(&path)
+                && let Ok(settings) = serde_json::from_slice::<Settings>(&bytes)
+                && settings
+                    .recent_searches
+                    .first()
+                    .is_some_and(|saved| saved.uri == item.uri)
+            {
+                break settings;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "the selected song must be written to disk"
+            );
+            std::thread::sleep(Duration::from_millis(10));
+        };
+        assert_eq!(reloaded.recent_searches[0].title, item.title);
+        assert_eq!(reloaded.search_history, ["older"]);
+        app.search.serial += 1;
+        app.remember_search("another search");
+        assert_eq!(app.settings.search_history, ["another search", "older"]);
+        app.backend.shutdown();
+        let _ = std::fs::remove_dir_all(root);
     }
 
     fn headless_app() -> App {
@@ -25978,7 +26125,7 @@ mod tests {
                 "unknown",
                 // Local playback is this computer, which Spotify has not
                 // named because it is not a remote device.
-                "Spotifast",
+                "Spotify",
             ]
         );
         // No devices seen yet is an empty array, not an empty string, so a
@@ -26833,6 +26980,26 @@ mod tests {
             )),
             "the retiring main window must keep its geometry: {commands:?}"
         );
+    }
+
+    #[test]
+    fn undersized_restore_bounds_never_replace_the_last_main_window_geometry() {
+        let mut app = headless_app();
+        app.window_geometry.size = Some([1100.0, 700.0]);
+        app.window_geometry.position = Some([100.0, 100.0]);
+        let ctx = egui::Context::default();
+        let mut input = egui::RawInput::default();
+        let viewport = input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap();
+        viewport.inner_rect = Some(egui::Rect::from_min_size(
+            egui::pos2(200.0, 200.0),
+            egui::vec2(140.0, 80.0),
+        ));
+        viewport.maximized = Some(false);
+        let mut output = ctx.run_ui(input, |ui| app.remember_geometry(ui.ctx()));
+        assert_eq!(app.window_geometry.size, Some([1100.0, 700.0]));
+        assert_eq!(app.window_geometry.position, Some([100.0, 100.0]));
+        output.textures_delta.clear();
+        app.backend.shutdown();
     }
 
     /// Switching from Winamp back to the main window preserves the main

@@ -3379,3 +3379,448 @@ msgstr ""
 
 #~ msgid "Reduce lyrics motion"
 #~ msgstr "Songtextanimation reduzieren"
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr "Passe die Zoomstufe an, um Spotify an deine Wünsche und Bedürfnisse anzupassen."
+
+
+msgid "All"
+msgstr "Alle"
+
+
+msgid "Alphabetical"
+msgstr "Alphabetisch"
+
+
+msgid "Audiobooks"
+msgstr "Hörbücher"
+
+
+msgid "Blend"
+msgstr "Blend"
+
+
+msgid "Browse"
+msgstr "Entdecken"
+
+
+msgid "Clear recent searches"
+msgstr "Letzte Suchanfragen löschen"
+
+
+msgid "Collapse Your Library"
+msgstr "Bibliothek einklappen"
+
+
+msgid "Compact grid"
+msgstr "Kompaktes Raster"
+
+
+msgid "Compact list"
+msgstr "Kompakte Liste"
+
+
+msgid "Connect"
+msgstr "Verbinden"
+
+
+msgid "Creator"
+msgstr "Ersteller"
+
+
+msgid "Default"
+msgstr "Standard"
+
+
+msgid "Dense"
+msgstr "Kompakt"
+
+
+msgid "Don't see your device?"
+msgstr "Dein Gerät wird nicht angezeigt?"
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr "Eigene Titelleiste und Fensterschaltflächen von Spotify statt der Standardelemente des Desktops zeichnen."
+
+
+msgid "Enter full screen"
+msgstr "Vollbild öffnen"
+
+
+msgid "Expand Your Library"
+msgstr "Bibliothek erweitern"
+
+
+msgid "Friend Activity"
+msgstr "Freundesaktivitäten"
+
+
+msgid "Go back"
+msgstr "Zurück"
+
+
+msgid "Go forward"
+msgstr "Vorwärts"
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr "Verwalte deine Höraktivität in der Spotify-App unter Einstellungen > Höraktivität und Einblicke."
+
+
+msgid "Hide"
+msgstr "Ausblenden"
+
+
+msgid "Jam"
+msgstr "Jam"
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr "Lass deine Freunde und Follower auf Spotify sehen, was du hörst."
+
+
+msgid "Listen now"
+msgstr "Jetzt anhören"
+
+
+msgid "Listen together from anywhere"
+msgstr "Von überall gemeinsam hören"
+
+
+msgid "Listening activity"
+msgstr "Höraktivität"
+
+
+msgid "Lyrics preview"
+msgstr "Songtextvorschau"
+
+
+msgid "Made for"
+msgstr "Für"
+
+
+msgid "Menu"
+msgstr "Menü"
+
+
+msgid "Mixed playlist"
+msgstr "Gemischte Playlist"
+
+
+msgid "More options"
+msgstr "Weitere Optionen"
+
+
+msgid "Music"
+msgstr "Musik"
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr "Musik, die auf diesem Computer läuft, stoppt beim Neustart von Spotify."
+
+
+msgid "Music video"
+msgstr "Musikvideo"
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr "Neue Veröffentlichungen erscheinen hier. Folge deinen Lieblingskünstlern und Podcasts, um auf dem Laufenden zu bleiben."
+
+
+msgid "No other devices found"
+msgstr "Keine weiteren Geräte gefunden"
+
+
+msgid "On other networks"
+msgstr "In anderen Netzwerken"
+
+
+msgid "Open Miniplayer"
+msgstr "Miniplayer öffnen"
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr "Die Wiedergabe erfordert Spotify Premium. Mit Free-Konten kannst du stöbern und suchen, aber keine Musik über Spotify abspielen."
+
+
+msgid "Podcasts and shows"
+msgstr "Podcasts und Shows"
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr "Beliebte Songs und Empfehlungen für dich."
+
+
+msgid "Popular songs and trending stations"
+msgstr "Beliebte Songs und angesagte Radiosender"
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr "Spotify stellt diesem Client keine echten Freundesaktivitäten zur Verfügung."
+
+
+msgid "Related music videos"
+msgstr "Ähnliche Musikvideos"
+
+
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+
+msgid "Saved & downloaded"
+msgstr "Gespeichert und heruntergeladen"
+
+
+msgid "Show all"
+msgstr "Alle anzeigen"
+
+
+msgid "Show more"
+msgstr "Mehr anzeigen"
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr "Melde dich über deinen Browser an. Spotify sieht dein Passwort nie. Lokale Wiedergabe erfordert Spotify Premium."
+
+
+msgid "Song"
+msgstr "Song"
+
+
+msgid "Spacious"
+msgstr "Großzügig"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr "Spotify wird im Infobereich ausgeblendet. Beende es über das Menü im Infobereich oder mit Cmd+Q."
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr "Spotify wird im Infobereich ausgeblendet. Beende es über das Menü im Infobereich oder mit Strg+Q."
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr "Die Standardverbindung von Spotify teilt sich das Anfragelimit von Spotify mit anderen Hörern. Bei hoher Auslastung können das Laden von Musik und die Wiedergabesteuerung länger dauern."
+
+
+msgid "Standard grid"
+msgstr "Standardraster"
+
+
+msgid "Standard list"
+msgstr "Standardliste"
+
+
+msgid "Start a Jam"
+msgstr "Jam starten"
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr "Die neuesten Veröffentlichungen von Künstlern, Podcasts und Shows, denen du folgst."
+
+
+msgid "There are no new releases for you right now."
+msgstr "Im Moment gibt es keine Neuigkeiten für dich."
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr "Spotify stellt diese Funktionen diesem Client nicht zur Verfügung."
+
+
+msgid "This computer"
+msgstr "Dieser Computer"
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr "Die Lautstärke dieses Geräts lässt sich nicht von Spotify aus ändern"
+
+
+msgid "What's New"
+msgstr "Neuigkeiten"
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr "Du kannst den Zoom auch mit Cmd+- oder Cmd++ ändern."
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr "Du kannst den Zoom auch mit Ctrl+- oder Ctrl++ ändern."
+
+
+msgid "Your Episodes"
+msgstr "Deine Folgen"
+
+
+msgid "Your Library"
+msgstr "Deine Bibliothek"
+
+
+msgid "Zoom level"
+msgstr "Zoomstufe"
+
+
+msgid "Bass Booster"
+msgstr "Bassverstärkung"
+
+
+msgid "Bass Reducer"
+msgstr "Bassreduzierung"
+
+
+msgid "Classical"
+msgstr "Klassik"
+
+
+msgid "Club"
+msgstr "Club"
+
+
+msgid "Custom"
+msgstr "Benutzerdefiniert"
+
+
+msgid "Dance"
+msgstr "Dance"
+
+
+msgid "Flat"
+msgstr "Neutral"
+
+
+msgid "Full Bass"
+msgstr "Starke Bässe"
+
+
+msgid "Full Bass & Treble"
+msgstr "Starke Bässe und Höhen"
+
+
+msgid "Full Treble"
+msgstr "Starke Höhen"
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr "Laptop-Lautsprecher / Kopfhörer"
+
+
+msgid "Large Hall"
+msgstr "Großer Saal"
+
+
+msgid "Live"
+msgstr "Live"
+
+
+msgid "Loudness"
+msgstr "Lautheit"
+
+
+msgid "Night Listening"
+msgstr "Nachthören"
+
+
+msgid "Party"
+msgstr "Party"
+
+
+msgid "Pop"
+msgstr "Pop"
+
+
+msgid "Recents"
+msgstr "Zuletzt"
+
+
+msgid "Reggae"
+msgstr "Reggae"
+
+
+msgid "Rock"
+msgstr "Rock"
+
+
+msgid "Ska"
+msgstr "Ska"
+
+
+msgid "Small Speakers"
+msgstr "Kleine Lautsprecher"
+
+
+msgid "Soft"
+msgstr "Sanft"
+
+
+msgid "Soft Rock"
+msgstr "Softrock"
+
+
+msgid "Sort by"
+msgstr "Sortieren nach"
+
+
+msgid "Spoken Word"
+msgstr "Sprache"
+
+
+msgid "Techno"
+msgstr "Techno"
+
+
+msgid "Treble Booster"
+msgstr "Höhenverstärkung"
+
+
+msgid "View as"
+msgstr "Anzeigen als"
+
+
+msgid "Vocal Booster"
+msgstr "Stimmenverstärkung"
+
+
+msgid "Show Now Playing view"
+msgstr "Aktuelle Wiedergabe anzeigen"
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr "Vereine den Musikgeschmack deiner Freunde in einer Playlist"
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr "Erstelle eine Playlist mit Songs oder Folgen"
+
+
+msgid "Mix songs with smooth transitions"
+msgstr "Mixe Songs mit sanften Übergängen"
+
+
+msgid "Organize your playlists"
+msgstr "Organisiere deine Playlists"
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr "Über den Künstler"
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr "Mitwirkende"
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr "Als Nächstes"
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr "Warteschlange öffnen"
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr "Mitwirkende anzeigen"

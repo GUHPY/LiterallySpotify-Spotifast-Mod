@@ -42,10 +42,21 @@ pub(crate) fn end_tint_session(ctx: &egui::Context) {
 }
 
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
+    let chrome_vis = ui
+        .ctx()
+        .data(|d| d.get_temp::<f32>(egui::Id::new(super::LYRICS_CHROME_VIS_ID)))
+        .unwrap_or(1.0);
+    if chrome_vis <= 0.01 {
+        return;
+    }
     let palette = app.palette;
-    let fill = eased_fill(ui.ctx(), palette.panel, app.now_playing_tint());
+    let fill = if palette.dark {
+        palette.window
+    } else {
+        eased_fill(ui.ctx(), palette.panel, app.now_playing_tint())
+    };
     egui::Panel::bottom("player-bar")
-        .exact_size(theme::PLAYER_BAR_HEIGHT)
+        .exact_size((theme::PLAYER_BAR_HEIGHT * chrome_vis).max(1.0))
         .resizable(false)
         .show_separator_line(false)
         .frame(
@@ -54,6 +65,9 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 .inner_margin(Margin::symmetric(16, 0)),
         )
         .show(ui, |ui| {
+            if chrome_vis < 0.35 {
+                return;
+            }
             let rect = ui.max_rect();
             let now = app.now_playing();
             // The whole bar, margins included, behind everything else.
@@ -61,18 +75,12 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             if visualizer(app, ui, behind, now.as_ref()) {
                 theme::visualiser_frame(ui.ctx(), app.visualiser_fps());
             }
-            // Its empty space is the visualizer's control, as Winamp's
-            // visualizer was: a click moves to the next mode. The controls
-            // drawn after it take their own clicks.
             if app.settings.player_bar_vis_click {
                 let empty = ui.interact(
                     behind,
                     ui.id().with("player-bar-visualizer"),
                     Sense::click(),
                 );
-                // An open tooltip stays while the pointer is inside its widget's
-                // rect, and this one spans the bar: offer it only while the empty
-                // space itself is hovered, not the controls over it.
                 let empty = if empty.hovered() {
                     empty.on_hover_text_at_pointer(gettext(
                         app.locale,
@@ -85,13 +93,8 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     app.actions.push(Action::CyclePlayerBarVis);
                 }
             }
-            ui.painter().hline(
-                rect.x_range(),
-                rect.top() + 0.5,
-                egui::Stroke::new(1.0, palette.outline),
-            );
             let width = rect.width();
-            let side = (width * 0.3).clamp(200.0, 420.0);
+            let side = (width * 0.32).clamp(220.0, 460.0);
             let cy = rect.center().y;
             let left = Rect::from_min_max(rect.min, pos2(rect.left() + side, rect.bottom()));
             let center = Rect::from_min_max(
@@ -99,15 +102,12 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 pos2(rect.right() - side, rect.bottom()),
             );
 
-            // egui's cross-axis centring is unreliable across nested layouts of
-            // mixed heights, so each region is placed in an explicit band that
-            // is sized to its content and centred on the bar's midline.
             now_playing_block(app, ui, left, now.as_ref());
 
             transport(app, ui, now.as_ref(), center);
 
             let right_band =
-                Rect::from_min_size(pos2(rect.right() - side, cy - 15.0), vec2(side, 30.0));
+                Rect::from_min_size(pos2(rect.right() - side, cy - 16.0), vec2(side, 32.0));
             let mut right_ui = ui.new_child(
                 UiBuilder::new()
                     .max_rect(right_band)
@@ -418,7 +418,7 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
         "player-bar",
         app.small_art(now, cover_rect.width()),
         cover_rect,
-        6.0,
+        4.0,
     );
     let song = app.now_playing_item();
     let drag_sense = if song.is_some() {
@@ -433,8 +433,6 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
         } else {
             egui::CursorIcon::Default
         });
-    // Hovering the cover offers to dock the art large at the sidebar's
-    // bottom, the way Spotify expands it. (#92)
     let art_available = now.art_url.is_some() || now.art_small.is_some();
     let expand_rect = Rect::from_center_size(
         pos2(cover_rect.right() - 10.0, cover_rect.top() + 10.0),
@@ -466,10 +464,24 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
             app.actions.push(Action::SettingsChanged);
         }
     }
-    let heart_width = if now.is_episode { 0.0 } else { 42.0 };
+    let title_w = ui
+        .painter()
+        .layout_no_wrap(now.title.clone(), theme::medium(14.0), palette.text)
+        .size()
+        .x;
+    let sub_full = now.subtitle.clone();
+    let sub_w = ui
+        .painter()
+        .layout_no_wrap(sub_full, theme::regular(12.0), palette.secondary)
+        .size()
+        .x;
+    let natural_text_w = title_w.max(sub_w);
+
     let text_left = cover_rect.right() + 12.0;
-    let text_width = (region.right() - text_left - heart_width).max(40.0);
-    let text_rect = Rect::from_min_size(pos2(text_left, cy - 18.0), vec2(text_width, 36.0));
+    let heart_need = if now.is_episode { 0.0 } else { 16.0 + 28.0 };
+    let max_text_w = (region.right() - text_left - heart_need - 8.0).max(40.0);
+    let text_w = natural_text_w.min(max_text_w);
+    let text_rect = Rect::from_min_size(pos2(text_left, cy - 18.0), vec2(text_w, 36.0));
     let info_response = ui.interact(text_rect, egui::Id::new("now-playing-info"), drag_sense);
     let mut text_ui = ui.new_child(
         UiBuilder::new()
@@ -487,6 +499,7 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
         }
     }
     text_ui.horizontal_top(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
         if now.artists.is_empty() {
             if theme::link(ui, &now.subtitle, theme::regular(12.0), palette.secondary).clicked()
                 && let Some(id) = &now.show_id
@@ -519,8 +532,6 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
         );
     }
 
-    // The playing thing answers the same right-click menu as a table row,
-    // from the cover, the empty space around the words, or the words.
     if let Some(item) = song {
         let context = app.editable_context_playlist();
         for response in [&cover_response, &info_response, &title_response] {
@@ -532,43 +543,19 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
 
     if !now.is_episode {
         let saved = app.is_saved(&now.uri).unwrap_or(false);
-        // A liked heart stays green under the pointer, like shuffle.
-        let (icon, color, hover, tooltip) = if saved {
-            (
-                Icon::HeartFilled,
-                palette.accent,
-                palette.accent_hover,
-                gettext(app.locale, "Remove from Liked Songs"),
-            )
+        let tooltip = if saved {
+            gettext(app.locale, "Remove from Liked Songs")
         } else {
-            (
-                Icon::Heart,
-                palette.secondary,
-                palette.text,
-                gettext(app.locale, "Save to Liked Songs"),
-            )
+            gettext(app.locale, "Save to Liked Songs")
         };
-        // Sit the heart just past the actual text, not at the region's far
-        // edge, so it stays visually attached to the title.
-        let natural = {
-            let title =
-                ui.painter()
-                    .layout_no_wrap(now.title.clone(), theme::medium(14.0), palette.text);
-            let subtitle = ui.painter().layout_no_wrap(
-                now.subtitle.clone(),
-                theme::regular(12.0),
-                palette.secondary,
-            );
-            title.size().x.max(subtitle.size().x).min(text_width)
-        };
-        let heart_x = (text_left + natural + 21.0).min(region.right() - 21.0);
-        let heart_rect = Rect::from_center_size(pos2(heart_x, cy), Vec2::splat(30.0));
+        let heart_x = (text_rect.right() + 16.0 + 14.0).min(region.right() - 14.0);
+        let heart_rect = Rect::from_center_size(pos2(heart_x, cy), Vec2::splat(28.0));
         let mut heart_ui = ui.new_child(
             UiBuilder::new()
                 .max_rect(heart_rect)
                 .layout(Layout::centered_and_justified(egui::Direction::LeftToRight)),
         );
-        if theme::icon_button(&mut heart_ui, icon, 17.0, color, hover, &tooltip).clicked() {
+        if theme::liked_button(&mut heart_ui, &palette, saved, 18.0, &tooltip).clicked() {
             app.actions.push(Action::ToggleSaved(now.uri.clone()));
         }
     }
@@ -576,16 +563,7 @@ fn now_playing_block(app: &mut App, ui: &mut egui::Ui, region: Rect, now: Option
 
 fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region: Rect) {
     let palette = app.palette;
-    // Everything here is placed with explicit rects: egui's implicit rows
-    // centre each widget in the row height known when it is added, which
-    // left earlier icons riding high next to the play disc.
-    //
-    // The buttons row (36) and the progress row (~15, after a 6px gap) form
-    // one cluster, centred as a group in the 88px bar: the buttons sit 8px
-    // above the bar's midline and the progress row 23px below it. Measured
-    // on screen this puts equal breathing room above and beneath the
-    // cluster.
-    let cy = region.center().y - 8.0;
+    let cy = region.center().y - 10.0;
     let enabled = now.is_some_and(|now| now.can_control) || app.is_connected();
     let playing = now.is_some_and(|now| now.playing);
     let loading = now.is_some_and(|now| now.loading);
@@ -597,13 +575,12 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
         palette.dim
     };
 
-    // Button widths: icon buttons occupy icon size + 12; the disc is 36.
-    let widths = [29.0, 30.0, 36.0, 30.0, 29.0];
-    let gap = 10.0;
+    let widths = [28.0, 28.0, 32.0, 28.0, 28.0];
+    let gap = 16.0;
     let total: f32 = widths.iter().sum::<f32>() + gap * 4.0;
     let mut x = region.center().x - total / 2.0;
     let mut slot = |width: f32| {
-        let rect = Rect::from_center_size(pos2(x + width / 2.0, cy), vec2(width, 36.0));
+        let rect = Rect::from_center_size(pos2(x + width / 2.0, cy), vec2(width, 32.0));
         x += width + gap;
         rect
     };
@@ -616,11 +593,12 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
     };
 
     let shuffle_color = if shuffle { palette.accent } else { dim };
-    let mut cell = centered(ui, slot(widths[0]));
+    let shuffle_slot = slot(widths[0]);
+    let mut cell = centered(ui, shuffle_slot);
     let shuffle_button = theme::icon_button(
         &mut cell,
         Icon::Shuffle,
-        17.0,
+        16.0,
         shuffle_color,
         if shuffle {
             palette.accent_hover
@@ -637,6 +615,9 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
             gettext(app.locale, "Shuffle"),
         )
     });
+    if shuffle {
+        theme::paint_active_dot(ui, shuffle_button.rect, palette.accent);
+    }
     if shuffle_button.clicked() {
         app.actions.push(Action::ToggleShuffle);
     }
@@ -645,7 +626,7 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
     if theme::icon_button(
         &mut cell,
         Icon::SkipBackFilled,
-        18.0,
+        16.0,
         dim,
         palette.text,
         &gettext(app.locale, "Previous"),
@@ -658,9 +639,9 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
     let disc = slot(widths[2]);
     if loading || app.any_play_pending() {
         ui.painter()
-            .circle_filled(disc.center(), 18.0, palette.text);
+            .circle_filled(disc.center(), 16.0, palette.text);
         let mut cell = centered(ui, disc);
-        theme::spinner(&mut cell, 22.0, palette.window);
+        theme::spinner(&mut cell, 20.0, palette.window);
     } else {
         let icon = if playing {
             Icon::PauseFilled
@@ -676,7 +657,7 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
         if theme::circle_button(
             &mut cell,
             icon,
-            36.0,
+            32.0,
             palette.text,
             hover,
             palette.window,
@@ -696,7 +677,7 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
     if theme::icon_button(
         &mut cell,
         Icon::SkipForwardFilled,
-        18.0,
+        16.0,
         dim,
         palette.text,
         &gettext(app.locale, "Next"),
@@ -720,10 +701,10 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
         ),
     };
     let mut cell = centered(ui, slot(widths[4]));
-    if theme::icon_button(
+    let repeat_button = theme::icon_button(
         &mut cell,
         repeat_icon,
-        17.0,
+        16.0,
         repeat_color,
         if repeat == RepeatMode::Off {
             palette.text
@@ -731,15 +712,15 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
             palette.accent_hover
         },
         &tooltip,
-    )
-    .clicked()
-    {
+    );
+    if repeat != RepeatMode::Off {
+        theme::paint_active_dot(ui, repeat_button.rect, palette.accent);
+    }
+    if repeat_button.clicked() {
         app.actions.push(Action::CycleRepeat);
     }
 
-    // Progress row, just below the buttons (disc bottom + 6px gap + half of
-    // the time text's line height).
-    let row_cy = cy + 31.0;
+    let row_cy = cy + 25.0;
     let slider_width = (region.width() - 120.0).clamp(120.0, 620.0);
     let (position, duration) = now
         .map(|now| (now.position_ms, now.duration_ms))
@@ -803,7 +784,49 @@ fn transport(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>, region:
 
 fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
     let palette = app.palette;
-    ui.spacing_mut().item_spacing.x = 6.0;
+    ui.spacing_mut().item_spacing.x = 4.0;
+
+    // 5. Fullscreen ("Entrar em tela cheia") — rightmost control
+    let fullscreen_active = app.lyrics_fullscreen.is_some();
+    if theme::icon_button(
+        ui,
+        Icon::Fullscreen,
+        16.0,
+        palette.secondary,
+        palette.text,
+        &gettext(app.locale, "Enter full screen"),
+    )
+    .clicked()
+    {
+        app.actions
+            .push(Action::SetLyricsFullscreen(!fullscreen_active));
+    }
+
+    let miniplayer_active = app.settings.winamp_window;
+    let miniplayer_btn = theme::icon_button(
+        ui,
+        Icon::MiniplayerSpotify,
+        16.0,
+        if miniplayer_active {
+            palette.accent
+        } else {
+            palette.secondary
+        },
+        if miniplayer_active {
+            palette.accent_hover
+        } else {
+            palette.text
+        },
+        &gettext(app.locale, "Open Miniplayer"),
+    );
+    if app.settings.winamp_window {
+        theme::paint_active_dot(ui, miniplayer_btn.rect, palette.accent);
+    }
+    if miniplayer_btn.clicked() {
+        app.actions.push(Action::ToggleWinampWindow);
+    }
+
+    // 3. Volume Slider + Volume Icon
     let volume = now
         .map(|now| now.volume_percent)
         .unwrap_or_else(|| crate::app::volume_to_percent(app.local.volume));
@@ -811,9 +834,6 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
         Some(fraction) => (fraction * 100.0).round() as u8,
         None => volume,
     };
-    // Some remote devices, such as a phone playing over Bluetooth, refuse
-    // volume changes from other apps: show their volume but don't offer to
-    // change it.
     let adjustable = now.is_none_or(|now| now.can_set_volume);
     let controls = ui.add_enabled_ui(adjustable, |ui| {
         match thin_slider(
@@ -822,12 +842,11 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
             egui::Id::new("volume-slider"),
             &gettext(app.locale, "Volume (%)"),
             shown as f32 / 100.0,
-            92.0,
+            76.0,
             Some(0.05),
         ) {
             SliderEvent::Dragging(value) => {
                 app.volume_preview = Some(value);
-                // Local volume is cheap to apply continuously; remote goes on release.
                 if now.is_none_or(|now| now.local) {
                     app.actions
                         .push(Action::PreviewVolume((value * 100.0).round() as u8));
@@ -840,16 +859,15 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
             }
             SliderEvent::None => {}
         }
-        let volume_icon = match shown {
-            0 => Icon::VolumeX,
-            1..=33 => Icon::Volume,
-            34..=66 => Icon::Volume1,
-            _ => Icon::Volume2,
+        let volume_icon = if shown == 0 {
+            Icon::VolumeMuteSpotify
+        } else {
+            Icon::VolumeSpotify
         };
         if theme::icon_button(
             ui,
             volume_icon,
-            18.0,
+            16.0,
             palette.secondary,
             palette.text,
             &if shown == 0 {
@@ -871,52 +889,70 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
         )
         .on_hover_text(gettext(
             app.locale,
-            "This device's volume can't be changed from Spotifast",
+            "This device's volume can't be changed from Spotify",
         ));
     }
-    ui.add_space(4.0);
-    let remote = now.is_some_and(|now| !now.local);
-    // Playing elsewhere, the button shows that device's own icon.
+
+    // 2. Connect to a device ("Conectar a um dispositivo")
+    // Only one panel is green at a time; if on standard Now Playing view, neither is green.
+    let connect_active = app.show_devices && !app.show_queue_panel;
     let icon = now
         .filter(|now| !now.local)
         .and_then(|now| now.device_kind.as_deref())
-        .map_or(Icon::Speaker, super::devices::device_icon);
+        .map_or(Icon::ConnectDevice, super::devices::device_icon);
     let devices = theme::icon_button(
         ui,
         icon,
-        18.0,
-        if remote {
+        16.0,
+        if connect_active {
             palette.accent
         } else {
             palette.secondary
         },
-        palette.text,
+        if connect_active {
+            palette.accent_hover
+        } else {
+            palette.text
+        },
         &gettext(app.locale, "Connect to a device"),
     );
+    if connect_active {
+        theme::paint_active_dot(ui, devices.rect, palette.accent);
+    }
     ui.ctx().data_mut(|data| {
         data.insert_temp(egui::Id::new(super::devices::BUTTON_RECT_ID), devices.rect)
     });
     if devices.clicked() {
+        app.show_queue_panel = false;
         app.actions.push(Action::ToggleDevicesPopup);
     }
-    let queue_open = app.show_queue_panel || matches!(app.page(), Page::Queue);
+
+    // 1. Queue ("Fila")
+    // Only one panel is green at a time; if on standard Now Playing view, neither is green.
+    let queue_open = (app.show_queue_panel || matches!(app.page(), Page::Queue)) && !app.show_devices;
     let queue_button = theme::icon_button(
         ui,
-        Icon::ListVideo,
-        18.0,
+        Icon::QueueSpotify,
+        16.0,
         if queue_open {
             palette.accent
         } else {
             palette.secondary
         },
-        palette.text,
+        if queue_open {
+            palette.accent_hover
+        } else {
+            palette.text
+        },
         &gettext(app.locale, "Queue"),
     );
+    if queue_open {
+        theme::paint_active_dot(ui, queue_button.rect, palette.accent);
+    }
     if queue_button.clicked() {
+        app.show_devices = false;
         app.actions.push(Action::ToggleQueuePanel);
     }
-    // A dragged song dropped on the queue button queues it, same as the
-    // "Add to queue" menu item.
     if let Some(track) = queue_button.dnd_release_payload::<DragTrack>() {
         app.actions.push(Action::QueueMany {
             songs: track
@@ -926,21 +962,31 @@ fn extras(app: &mut App, ui: &mut egui::Ui, now: Option<&NowPlaying>) {
                 .collect(),
         });
     }
-    if theme::icon_button(
+
+    // 0. Lyrics ("Letra" — in-window Cinema Mode lyrics)
+    let lyrics_cinema_open = app.lyrics_fullscreen.is_some();
+    let lyrics_btn = theme::icon_button(
         ui,
-        Icon::Mic,
-        18.0,
-        if app.show_lyrics_panel {
+        Icon::LyricsMicSpotify,
+        16.0,
+        if lyrics_cinema_open {
             palette.accent
         } else {
             palette.secondary
         },
-        palette.text,
+        if lyrics_cinema_open {
+            palette.accent_hover
+        } else {
+            palette.text
+        },
         &gettext(app.locale, "Lyrics"),
-    )
-    .clicked()
-    {
-        app.actions.push(Action::ToggleLyricsPanel);
+    );
+    if lyrics_cinema_open {
+        theme::paint_active_dot(ui, lyrics_btn.rect, palette.accent);
+    }
+    if lyrics_btn.clicked() {
+        app.actions
+            .push(Action::SetLyricsFullscreen(!lyrics_cinema_open));
     }
 }
 

@@ -242,51 +242,68 @@ fn section(
     title: &str,
     add_contents: impl FnOnce(&mut egui::Ui),
 ) {
+    ui.add_space(16.0);
+    theme::text(ui, title, theme::bold(20.0), palette.text);
     ui.add_space(10.0);
-    theme::text(ui, title, theme::bold(18.0), palette.text);
-    ui.add_space(8.0);
-    Frame::new()
-        .fill(
-            palette
-                .surface
-                .gamma_multiply(if palette.dark { 0.7 } else { 1.0 }),
-        )
-        .stroke(Stroke::new(1.0, palette.outline))
-        .corner_radius(CornerRadius::same(theme::RADIUS + 2))
-        .inner_margin(Margin::symmetric(20, 16))
+    Frame::NONE
+        .inner_margin(Margin::symmetric(0, 4))
         .show(ui, |ui| {
-            ui.set_width(ui.available_width().min(760.0));
+            ui.set_width(ui.available_width().min(768.0));
             add_contents(ui);
         });
-    ui.add_space(8.0);
+    ui.add_space(12.0);
+    let rect = ui.available_rect_before_wrap();
+    ui.painter().hline(
+        rect.left()..=(rect.left() + rect.width().min(768.0)),
+        rect.top(),
+        Stroke::new(1.0, egui::Color32::from_white_alpha(18)),
+    );
 }
 
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
+    let total_width = ui.available_width();
+    let column_width = total_width.min(768.0);
+    let side_margin = ((total_width - column_width) / 2.0).max(0.0);
+    ui.horizontal(|ui| {
+        if side_margin > 0.5 {
+            ui.add_space(side_margin);
+        }
+        ui.vertical(|ui| {
+            ui.set_max_width(768.0);
+            show_inner(app, ui);
+        });
+    });
+}
+
+fn show_inner(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
     let locale = app.locale;
-    ui.add_space(8.0);
-    theme::text(
-        ui,
-        gettext(locale, "Settings"),
-        theme::bold(28.0),
-        palette.text,
-    );
-    ui.add_space(4.0);
+    ui.add_space(12.0);
     let mut filter = ui
         .data(|data| data.get_temp::<String>(egui::Id::new(SETTINGS_FILTER_ID)))
         .unwrap_or_default();
-    widgets::search_field(
-        ui,
-        &palette,
-        app.locale,
-        egui::Id::new("settings-search-field"),
-        &mut filter,
-        &gettext(locale, "Search settings"),
-        ui.available_width().min(400.0),
-    );
+    ui.horizontal(|ui| {
+        theme::text(
+            ui,
+            gettext(locale, "Settings"),
+            theme::bold(32.0),
+            palette.text,
+        );
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            widgets::search_field(
+                ui,
+                &palette,
+                app.locale,
+                egui::Id::new("settings-search-field"),
+                &mut filter,
+                &gettext(locale, "Search settings"),
+                ui.available_width().min(260.0),
+            );
+        });
+    });
     let needle = filter.trim().to_lowercase();
     ui.data_mut(|data| data.insert_temp(egui::Id::new(SETTINGS_FILTER_ID), filter));
-    ui.add_space(4.0);
+    ui.add_space(8.0);
     let dirty_id = egui::Id::new(PLAYBACK_DIRTY_ID);
     let mut playback_dirty = ui
         .data(|data| data.get_temp::<bool>(dirty_id))
@@ -553,11 +570,11 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             super::keys::platform_shortcut(
                 &gettext(
                     locale,
-                    "Spotifast hides to the system tray. Quit from the tray menu or with Ctrl+Q.",
+                    "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q.",
                 ),
                 &gettext(
                     locale,
-                    "Spotifast hides to the system tray. Quit from the tray menu or with Cmd+Q.",
+                    "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q.",
                 ),
             )
             .to_owned(),
@@ -948,7 +965,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
             custom_titlebar.clone(),
             gettext(
                 locale,
-                "Draw Spotifast's own title bar and window buttons instead of the desktop's.",
+                "Draw Spotify's own title bar and window buttons instead of the desktop's.",
             ),
         )
         .when(show_custom_titlebar),
@@ -1230,36 +1247,19 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     }
                 },
             );
-            filtered_row(
-                ui,
-                &palette,
-                &needle,
-                &appearance,
-                &appearance_rows[5],
-                |ui| {
-                    ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 6.0;
-                        let mut zoom = app.settings.zoom;
-                        if theme::soft_button(ui, &palette, None, "+", false).clicked() {
-                            zoom = (zoom + 0.1).min(2.5);
-                        }
-                        theme::text(
-                            ui,
-                            format!("{:.0}%", zoom * 100.0),
-                            theme::medium(13.5),
-                            palette.text,
-                        );
-                        if theme::soft_button(ui, &palette, None, "-", false).clicked() {
-                            zoom = (zoom - 0.1).max(0.5);
-                        }
-                        if (zoom - app.settings.zoom).abs() > 0.001 {
-                            app.settings.zoom = zoom;
-                            ui.ctx().set_zoom_factor(zoom);
-                            app.mark_settings_dirty();
-                        }
-                    });
-                },
-            );
+            if appearance_rows[5].matches(&needle, &appearance) {
+                theme::text(ui, gettext(locale, "Zoom level"), theme::semibold(14.0), palette.text);
+                ui.add_space(8.0);
+                theme::text(ui, gettext(locale, "Adjust the zoom level to fit Spotify to your preferences and needs."), theme::regular(13.0), palette.secondary);
+                ui.add_space(8.0);
+                theme::text(ui, super::keys::platform_shortcut(
+                    &gettext(locale, "You can also change the zoom with Ctrl+- or Ctrl++."),
+                    &gettext(locale, "You can also change the zoom with Cmd+- or Cmd++."),
+                ), theme::regular(13.0), palette.secondary);
+                ui.add_space(20.0);
+                zoom_level_card(app, ui);
+                ui.add_space(10.0);
+            }
             if cfg!(target_os = "linux") {
                 filtered_row(
                     ui,
@@ -1494,7 +1494,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 // the mini player opens.
                 const RANDOM: usize = usize::MAX;
                 let random = gettext(locale, "Random");
-                let mut options: Vec<(usize, &str)> = vec![(RANDOM, &random), (0, "Spotifast")];
+                let mut options: Vec<(usize, &str)> = vec![(RANDOM, &random), (0, "Spotify")];
                 options.extend(
                     choices
                         .iter()
@@ -1528,7 +1528,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     let label = options
                         .iter()
                         .find(|(value, _)| *value == showing)
-                        .map_or("Spotifast", |(_, label)| label);
+                        .map_or("Spotify", |(_, label)| label);
                     theme::subtle(
                         ui,
                         &palette,
@@ -1611,20 +1611,20 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 0 => gettext(
                     locale,
                     // Translators: {folder} is the path of the MilkDrop presets folder.
-                    "None yet in {folder}. Add .milk files here. Spotifast downloads presets when MilkDrop first opens with an empty folder.",
+                    "None yet in {folder}. Add .milk files here. Spotify downloads presets when MilkDrop first opens with an empty folder.",
                 )
                 .replace("{folder}", &folder),
                 1 => gettext(
                     locale,
                     // Translators: {folder} is the path of the MilkDrop presets folder.
-                    "One preset in {folder}. Add .milk files here. Spotifast downloads presets when MilkDrop first opens with an empty folder.",
+                    "One preset in {folder}. Add .milk files here. Spotify downloads presets when MilkDrop first opens with an empty folder.",
                 )
                 .replace("{folder}", &folder),
                 n => ngettext(
                     locale,
                     // Translators: {count} is the number of presets, {folder} the path of the MilkDrop presets folder.
-                    "{count} preset in {folder}. Add .milk files here. Spotifast downloads presets when MilkDrop first opens with an empty folder.",
-                    "{count} presets in {folder}. Add .milk files here. Spotifast downloads presets when MilkDrop first opens with an empty folder.",
+                    "{count} preset in {folder}. Add .milk files here. Spotify downloads presets when MilkDrop first opens with an empty folder.",
+                    "{count} presets in {folder}. Add .milk files here. Spotify downloads presets when MilkDrop first opens with an empty folder.",
                     u32::try_from(n).unwrap_or(u32::MAX),
                 )
                 .replace("{count}", &n.to_string())
@@ -1814,44 +1814,10 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                     }
                 },
             );
-            let names: Vec<(usize, &str)> = crate::eq::PRESETS
-                .iter()
-                .enumerate()
-                .map(|(index, preset)| (index, preset.name))
-                .collect();
-            let current = crate::eq::PRESETS
-                .iter()
-                .position(|preset| preset.bands_db == app.settings.eq_bands_db)
-                .unwrap_or(usize::MAX);
             let eq_extra_visible = equalizer_rows[1].matches(&needle, &equalizer);
             if eq_extra_visible {
-                if let Some(picked) = widgets::chips(ui, &palette, &names, current) {
-                    app.actions.push(Action::ApplyEqPreset(picked));
-                }
-                ui.add_space(10.0);
-                eq_curve(ui, &palette, &crate::app::eq_settings(&app.settings));
-                ui.add_space(10.0);
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 14.0;
-                    let on = app.settings.eq_on;
-                    let mut preamp = app.settings.eq_preamp_db;
-                    if eq_slider(
-                        ui,
-                        &palette,
-                        // Translators: short label under the equalizer's preamplifier slider.
-                        &pgettext(locale, "equalizer", "Pre"),
-                        &mut preamp,
-                        on,
-                    ) {
-                        app.actions.push(Action::SetEqPreamp(preamp));
-                    }
-                    for (band, hz) in crate::eq::BANDS.iter().enumerate() {
-                        let mut gain = app.settings.eq_bands_db[band];
-                        if eq_slider(ui, &palette, &hertz(*hz), &mut gain, on) {
-                            app.actions.push(Action::SetEqBand(band, gain));
-                        }
-                    }
-                });
+                ui.add_space(6.0);
+                spotify_6band_equalizer(app, ui);
             }
         });
     }
@@ -1934,7 +1900,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let source_code = gettext(locale, "Source code");
     let about_rows = [
         RowText::new(
-            format!("Spotifast {}", env!("CARGO_PKG_VERSION")),
+            format!("Spotify {}", env!("CARGO_PKG_VERSION")),
             built_with.clone(),
         ),
         RowText::new(
@@ -1951,7 +1917,7 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
                 ui.vertical(|ui| {
                     theme::text(
                         ui,
-                        format!("Spotifast {}", env!("CARGO_PKG_VERSION")),
+                        format!("Spotify {}", env!("CARGO_PKG_VERSION")),
                         theme::semibold(15.0),
                         palette.text,
                     );
@@ -2015,7 +1981,6 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
     }
 }
 
-/// A band's frequency the short way: 60, 170, 1K, 16K.
 /// The interface language: System first, then each language by its own name,
 /// so a reader can find theirs whatever language the app is showing.
 fn language_picker(app: &mut App, ui: &mut egui::Ui) {
@@ -2056,117 +2021,420 @@ fn language_picker(app: &mut App, ui: &mut egui::Ui) {
     });
 }
 
-fn hertz(hz: f32) -> String {
-    if hz >= 1000.0 {
-        format!("{}K", (hz / 1000.0).round() as u32)
-    } else {
-        format!("{}", hz.round() as u32)
+/// Visual Zoom Level Card (`Denso` / `Padrão` / `Amplo` + `70%`–`130%` radio ruler).
+fn zoom_level_card(app: &mut App, ui: &mut egui::Ui) {
+    use egui::{Rect, Sense, pos2, vec2};
+    let palette = app.palette;
+    let locale = app.locale;
+    let mut zoom = app.settings.zoom;
+    Frame::new()
+        .fill(palette.surface)
+        .corner_radius(8.0)
+        .inner_margin(Margin::symmetric(24, 24))
+        .show(ui, |ui| {
+            let width = ui.available_width();
+            let column = width / 3.0;
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 0.0;
+                for (index, (label, value)) in [
+                    (gettext(locale, "Dense"), 0.9),
+                    (gettext(locale, "Default"), 1.0),
+                    (gettext(locale, "Spacious"), 1.1),
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    let (rect, response) =
+                        ui.allocate_exact_size(vec2(column, 116.0), Sense::click());
+                    response.widget_info(|| {
+                        egui::WidgetInfo::labeled(
+                            egui::WidgetType::Button,
+                            ui.is_enabled(),
+                            label.as_ref(),
+                        )
+                    });
+                    let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
+                    let active = if index == 0 {
+                        zoom < 0.95
+                    } else if index == 1 {
+                        (0.95..=1.05).contains(&zoom)
+                    } else {
+                        zoom > 1.05
+                    };
+                    let preview = Rect::from_center_size(
+                        pos2(rect.center().x, rect.top() + 40.0),
+                        vec2((column - 8.0).clamp(16.0, 80.0), 64.0),
+                    );
+                    let painter = ui.painter();
+                    painter.rect_stroke(
+                        preview,
+                        1.0,
+                        Stroke::new(1.0, palette.secondary),
+                        egui::StrokeKind::Inside,
+                    );
+                    let inner = preview.shrink(4.0);
+                    let columns = [5, 3, 3][index];
+                    let rows = [5, 3, 2][index];
+                    let fill = if active {
+                        palette.accent
+                    } else {
+                        palette.secondary.gamma_multiply(0.45)
+                    };
+                    let cell = vec2(inner.width() / columns as f32, inner.height() / rows as f32);
+                    for row in 0..rows {
+                        for col in 0..columns {
+                            painter.rect_filled(
+                                Rect::from_min_size(
+                                    inner.min + vec2(col as f32 * cell.x, row as f32 * cell.y),
+                                    cell,
+                                )
+                                .shrink(1.0),
+                                1.0,
+                                fill,
+                            );
+                        }
+                    }
+                    painter.text(
+                        pos2(rect.center().x, rect.bottom() - 14.0),
+                        egui::Align2::CENTER_CENTER,
+                        label.as_ref(),
+                        theme::semibold(13.0),
+                        palette.text,
+                    );
+                    if response.clicked() {
+                        zoom = value;
+                    }
+                }
+            });
+            let stops = [70, 80, 90, 100, 110, 120, 130];
+            let step = width / stops.len() as f32;
+            let top = ui.cursor().top();
+            ui.painter().hline(
+                (ui.cursor().left() + step / 2.0)..=(ui.cursor().left() + width - step / 2.0),
+                top + 12.0,
+                Stroke::new(1.0, palette.outline),
+            );
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 0.0;
+                for pct in stops {
+                    let (rect, response) = ui.allocate_exact_size(vec2(step, 56.0), Sense::click());
+                    response.widget_info(|| {
+                        egui::WidgetInfo::labeled(
+                            egui::WidgetType::Button,
+                            ui.is_enabled(),
+                            format!("{pct}%"),
+                        )
+                    });
+                    let response = response.on_hover_cursor(egui::CursorIcon::PointingHand);
+                    let center = pos2(rect.center().x, rect.top() + 12.0);
+                    ui.painter().circle_filled(center, 7.0, palette.surface);
+                    ui.painter().circle_stroke(
+                        center,
+                        6.0,
+                        Stroke::new(
+                            if (zoom * 100.0 - pct as f32).abs() < 1.0 {
+                                3.0
+                            } else {
+                                1.0
+                            },
+                            if (zoom * 100.0 - pct as f32).abs() < 1.0 {
+                                palette.accent
+                            } else {
+                                palette.secondary
+                            },
+                        ),
+                    );
+                    ui.painter().text(
+                        pos2(rect.center().x, rect.top() + 38.0),
+                        egui::Align2::CENTER_CENTER,
+                        format!("{pct}%"),
+                        theme::regular(13.0),
+                        palette.secondary,
+                    );
+                    if response.clicked() {
+                        zoom = pct as f32 / 100.0;
+                    }
+                }
+            });
+            ui.add_space(12.0);
+            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                if theme::pill_button(ui, &palette, &gettext(locale, "Reset"), false)
+                    .clicked()
+                {
+                    zoom = 1.0;
+                }
+            });
+        });
+    if (zoom - app.settings.zoom).abs() > 0.001 {
+        app.settings.zoom = zoom;
+        ui.ctx().set_zoom_factor(zoom);
+        app.mark_settings_dirty();
     }
 }
 
-/// One vertical slider in the app's own style: the track filled from
-/// 0 dB, the handle in the middle when flat, a double-click to put it
-/// back there. Returns whether it moved.
-fn eq_slider(ui: &mut egui::Ui, palette: &Palette, label: &str, value: &mut f32, on: bool) -> bool {
-    use egui::{Rect, Stroke, pos2, vec2};
-    let range = crate::eq::RANGE_DB;
-    ui.vertical(|ui| {
-        let (rect, response) =
-            ui.allocate_exact_size(vec2(30.0, 118.0), egui::Sense::click_and_drag());
-        let track = Rect::from_center_size(rect.center(), vec2(4.0, rect.height() - 20.0));
-        let y_of = |db: f32| track.bottom() - (db + range) / (2.0 * range) * track.height();
-        let mut changed = false;
-        if response.double_clicked() {
-            *value = 0.0;
-            changed = true;
-        } else if (response.dragged() || response.clicked())
-            && let Some(pos) = response.interact_pointer_pos()
-        {
-            let db = (track.bottom() - pos.y) / track.height() * 2.0 * range - range;
-            let db = (db.clamp(-range, range) * 10.0).round() / 10.0;
-            if db != *value {
-                *value = db;
-                changed = true;
-            }
-        }
-        if ui.is_rect_visible(rect) {
-            let painter = ui.painter();
-            painter.rect_filled(track, 2.0, palette.surface_active);
-            let fill = if on { palette.accent } else { palette.dim };
-            let (top, bottom) = (y_of(value.max(0.0)), y_of(value.min(0.0)));
-            painter.rect_filled(
-                Rect::from_min_max(pos2(track.left(), top), pos2(track.right(), bottom)),
-                2.0,
-                fill,
-            );
-            painter.hline(
-                (track.left() - 3.0)..=(track.right() + 3.0),
-                y_of(0.0),
-                Stroke::new(1.0, palette.dim),
-            );
-            let handle = pos2(track.center().x, y_of(*value));
-            painter.circle_filled(handle, 7.0, palette.text);
-            if response.hovered() || response.dragged() {
-                painter.text(
-                    pos2(track.center().x, rect.top() + 2.0),
-                    egui::Align2::CENTER_TOP,
-                    format!("{value:+.1}"),
-                    theme::regular(11.0),
+fn eq_preset_label(
+    locale: crate::i18n::Locale,
+    name: &'static str,
+) -> std::borrow::Cow<'static, str> {
+    match name {
+        "Flat" => gettext(locale, "Flat"),
+        "Classical" => gettext(locale, "Classical"),
+        "Club" => gettext(locale, "Club"),
+        "Dance" => gettext(locale, "Dance"),
+        "Full Bass" => gettext(locale, "Full Bass"),
+        "Full Bass & Treble" => gettext(locale, "Full Bass & Treble"),
+        "Full Treble" => gettext(locale, "Full Treble"),
+        "Laptop Speakers / Headphones" => gettext(locale, "Laptop Speakers / Headphones"),
+        "Large Hall" => gettext(locale, "Large Hall"),
+        "Live" => gettext(locale, "Live"),
+        "Party" => gettext(locale, "Party"),
+        "Pop" => gettext(locale, "Pop"),
+        "Reggae" => gettext(locale, "Reggae"),
+        "Rock" => gettext(locale, "Rock"),
+        "Ska" => gettext(locale, "Ska"),
+        "Soft" => gettext(locale, "Soft"),
+        "Soft Rock" => gettext(locale, "Soft Rock"),
+        "Techno" => gettext(locale, "Techno"),
+        "Bass Booster" => gettext(locale, "Bass Booster"),
+        "Bass Reducer" => gettext(locale, "Bass Reducer"),
+        "Treble Booster" => gettext(locale, "Treble Booster"),
+        "Vocal Booster" => gettext(locale, "Vocal Booster"),
+        "Small Speakers" => gettext(locale, "Small Speakers"),
+        "Spoken Word" => gettext(locale, "Spoken Word"),
+        "Loudness" => gettext(locale, "Loudness"),
+        "Night Listening" => gettext(locale, "Night Listening"),
+        other => std::borrow::Cow::Borrowed(other),
+    }
+}
+
+/// Official Spotify Desktop 6-Band Interactive Cubic Hermite Spline Equalizer
+/// (`60Hz, 150Hz, 400Hz, 1KHz, 2.4KHz, 15KHz`), fully styled by `app.palette`.
+fn spotify_6band_equalizer(app: &mut App, ui: &mut egui::Ui) {
+    use egui::{Color32, Mesh, Pos2, Rect, Sense, Shape, Stroke, pos2, vec2};
+    let palette = app.palette;
+    let locale = app.locale;
+    let current = crate::eq::PRESETS
+        .iter()
+        .position(|preset| preset.bands_db == app.settings.eq_bands_db)
+        .unwrap_or(usize::MAX);
+
+    Frame::new()
+        .fill(palette.surface)
+        .corner_radius(CornerRadius::same(8))
+        .inner_margin(Margin::symmetric(24, 20))
+        .show(ui, |ui| {
+            // Top bar inside card: "Predefinições" + dropdown ("Plano ⌄") on the left
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 16.0;
+                theme::text(
+                    ui,
+                    gettext(locale, "Presets"),
+                    theme::medium(13.5),
                     palette.secondary,
                 );
-            }
-        }
-        theme::text(ui, label, theme::regular(11.5), palette.secondary);
-        changed
-    })
-    .inner
-}
+                let selected_name = crate::eq::PRESETS
+                    .get(current)
+                    .map(|p| eq_preset_label(locale, p.name))
+                    .unwrap_or_else(|| gettext(locale, "Custom"));
+                egui::ComboBox::from_id_salt("eq_presets_dropdown")
+                    .selected_text(selected_name)
+                    .width(180.0)
+                    .show_ui(ui, |ui| {
+                        for (index, preset) in crate::eq::PRESETS.iter().enumerate() {
+                            let label = eq_preset_label(locale, preset.name);
+                            if ui.selectable_label(current == index, label).clicked() {
+                                app.actions.push(Action::ApplyEqPreset(index));
+                            }
+                        }
+                    });
+            });
 
-/// The equalizer's response over the audible range, the bands marked on
-/// it: the shape says what a row of numbers cannot.
-fn eq_curve(ui: &mut egui::Ui, palette: &Palette, settings: &crate::eq::EqSettings) {
-    use egui::{Shape, Stroke, pos2, vec2};
-    let width = ui.available_width().min(720.0);
-    let (rect, _) = ui.allocate_exact_size(vec2(width, 120.0), egui::Sense::hover());
-    let painter = ui.painter();
-    painter.rect_filled(rect, theme::RADIUS as f32, palette.surface);
-    let plot = rect.shrink2(vec2(10.0, 12.0));
-    let (low, high) = (20f32.log10(), 20_000f32.log10());
-    let x_of = |hz: f32| plot.left() + (hz.log10() - low) / (high - low) * plot.width();
-    let y_of = |db: f32| {
-        plot.center().y
-            - db.clamp(-crate::eq::RANGE_DB, crate::eq::RANGE_DB) / crate::eq::RANGE_DB
-                * plot.height()
-                / 2.0
-    };
-    for db in [-12.0, -6.0, 0.0, 6.0, 12.0] {
-        let color = if db == 0.0 {
-            palette.dim
-        } else {
-            palette.outline
-        };
-        painter.hline(plot.x_range(), y_of(db), Stroke::new(1.0, color));
-    }
-    for hz in crate::eq::BANDS {
-        painter.vline(x_of(hz), plot.y_range(), Stroke::new(1.0, palette.outline));
-    }
-    let curve = settings.curve();
-    let points: Vec<egui::Pos2> = (0..=240)
-        .map(|step| {
-            let t = step as f32 / 240.0;
-            let hz = 10f32.powf(low + t * (high - low));
-            pos2(plot.left() + t * plot.width(), y_of(curve.db_at(hz)))
-        })
-        .collect();
-    let color = if settings.on {
-        palette.accent
-    } else {
-        palette.dim
-    };
-    painter.add(Shape::line(points, Stroke::new(2.0, color)));
-    for (hz, db) in crate::eq::BANDS.iter().zip(settings.bands_db) {
-        painter.circle_filled(pos2(x_of(*hz), y_of(db + settings.preamp_db)), 3.0, color);
-    }
+            ui.add_space(16.0);
+
+            let width = ui.available_width();
+            let height = 220.0;
+            let (rect, _) = ui.allocate_exact_size(vec2(width, height), Sense::hover());
+            if ui.is_rect_visible(rect) {
+                let painter = ui.painter();
+                let plot = Rect::from_min_max(
+                    pos2(rect.left() + 86.0, rect.top() + 14.0),
+                    pos2(rect.right() - 48.0, rect.bottom() - 36.0),
+                );
+                let range = crate::eq::RANGE_DB;
+                let y_of = |db: f32| {
+                    plot.center().y - (db.clamp(-range, range) / range) * (plot.height() / 2.0)
+                };
+                let db_of_y = |y: f32| {
+                    (((plot.center().y - y) / (plot.height() / 2.0)) * range).clamp(-range, range)
+                };
+
+                // dB axis labels (+12dB at top, -12dB at bottom) and single 0dB center line
+                for (db, label) in [(12.0f32, "+12dB"), (-12.0, "-12dB")] {
+                    let y = y_of(db);
+                    painter.text(
+                        pos2(rect.left() + 8.0, y),
+                        egui::Align2::LEFT_CENTER,
+                        label,
+                        theme::bold(12.0),
+                        palette.secondary,
+                    );
+                }
+                let zero_y = y_of(0.0);
+                painter.hline(
+                    (plot.left() - 34.0)..=(plot.right() + 34.0),
+                    zero_y,
+                    Stroke::new(1.0, palette.outline),
+                );
+
+                // 6 official Spotify bands mapped to our 10-band engine
+                const LABELS: [&str; 6] = ["60Hz", "150Hz", "400Hz", "1KHz", "2.4KHz", "15KHz"];
+                const PRIMARY_BAND: [usize; 6] = [0, 1, 2, 4, 5, 9];
+
+                let mut nodes: [Pos2; 6] = [Pos2::ZERO; 6];
+                for i in 0..6 {
+                    let t = i as f32 / 5.0;
+                    let x = plot.left() + t * plot.width();
+                    let db = app.settings.eq_bands_db[PRIMARY_BAND[i]];
+                    nodes[i] = pos2(x, y_of(db));
+
+                    // Vertical guide line and bottom frequency label
+                    painter.vline(x, plot.y_range(), Stroke::new(1.0, palette.outline));
+                    painter.text(
+                        pos2(x, rect.bottom() - 10.0),
+                        egui::Align2::CENTER_CENTER,
+                        LABELS[i],
+                        theme::bold(12.0),
+                        palette.secondary,
+                    );
+                }
+
+                // Compute exact Cubic Hermite Spline tangents (Spotify's `ew` algorithm)
+                let mut tangents: [egui::Vec2; 6] = [egui::Vec2::ZERO; 6];
+                for i in 0..6 {
+                    tangents[i] = if i == 0 {
+                        nodes[1] - nodes[0]
+                    } else if i == 5 {
+                        nodes[5] - nodes[4]
+                    } else {
+                        let mut m = (nodes[i + 1] - nodes[i - 1]) * 0.5;
+                        let dy_prev = nodes[i].y - nodes[i - 1].y;
+                        let dy_next = nodes[i + 1].y - nodes[i].y;
+                        if dy_prev * dy_next <= 0.0 {
+                            m.y = 0.0;
+                        }
+                        m
+                    };
+                }
+
+                // Sample spline curve across all 5 segments
+                let steps_per_seg = 32usize;
+                let mut curve_pts = Vec::with_capacity(5 * steps_per_seg + 1);
+                for seg in 0..5 {
+                    let p0 = nodes[seg];
+                    let p1 = nodes[seg + 1];
+                    let m0 = tangents[seg];
+                    let m1 = tangents[seg + 1];
+                    for s in 0..steps_per_seg {
+                        let t = s as f32 / steps_per_seg as f32;
+                        let t2 = t * t;
+                        let t3 = t2 * t;
+                        let h00 = 2.0 * t3 - 3.0 * t2 + 1.0;
+                        let h10 = t3 - 2.0 * t2 + t;
+                        let h01 = -2.0 * t3 + 3.0 * t2;
+                        let h11 = t3 - t2;
+                        let x = p0.x + t * (p1.x - p0.x);
+                        let y = (h00 * p0.y + h10 * m0.y + h01 * p1.y + h11 * m1.y)
+                            .clamp(plot.top(), plot.bottom());
+                        curve_pts.push(pos2(x, y));
+                    }
+                }
+                curve_pts.push(nodes[5]);
+
+                // Theme-colored (`palette.accent`) vertical gradient fill under the spline down to plot.bottom()
+                let [ar, ag, ab, _] = palette.accent.to_array();
+                let top_alpha = if app.settings.eq_on { 145 } else { 118 };
+                let top_fill = Color32::from_rgba_unmultiplied(ar, ag, ab, top_alpha);
+                let bot_fill = Color32::from_rgba_unmultiplied(ar, ag, ab, 0);
+                let mut mesh = Mesh::default();
+                for pt in &curve_pts {
+                    mesh.colored_vertex(*pt, top_fill);
+                    mesh.colored_vertex(pos2(pt.x, plot.bottom()), bot_fill);
+                }
+                for i in 0..(curve_pts.len() - 1) {
+                    let idx = (i * 2) as u32;
+                    mesh.add_triangle(idx, idx + 1, idx + 2);
+                    mesh.add_triangle(idx + 1, idx + 3, idx + 2);
+                }
+                painter.add(Shape::mesh(mesh));
+
+                // Spline stroke line in theme's `palette.accent`
+                painter.add(Shape::line(curve_pts, Stroke::new(2.5, palette.accent)));
+
+                // 6 interactive draggable circular handles
+                for i in 0..6 {
+                    let center = nodes[i];
+                    let hit_rect = Rect::from_center_size(center, vec2(26.0, plot.height()));
+                    let handle_id = ui.id().with(("spotify-eq-node", i));
+                    let resp = ui.interact(hit_rect, handle_id, Sense::click_and_drag());
+                    let mut new_db = None;
+                    if resp.double_clicked() {
+                        new_db = Some(0.0);
+                    } else if (resp.dragged() || resp.clicked())
+                        && let Some(pos) = resp.interact_pointer_pos()
+                    {
+                        let db = (db_of_y(pos.y) * 10.0).round() / 10.0;
+                        new_db = Some(db);
+                    }
+                    if let Some(db) = new_db {
+                        if !app.settings.eq_on {
+                            app.actions.push(Action::ToggleEq);
+                        }
+                        match i {
+                            0 => app.actions.push(Action::SetEqBand(0, db)),
+                            1 => app.actions.push(Action::SetEqBand(1, db)),
+                            2 => {
+                                app.actions.push(Action::SetEqBand(2, db));
+                                app.actions.push(Action::SetEqBand(3, db));
+                            }
+                            3 => app.actions.push(Action::SetEqBand(4, db)),
+                            4 => {
+                                app.actions.push(Action::SetEqBand(5, db));
+                                app.actions.push(Action::SetEqBand(6, db));
+                            }
+                            _ => {
+                                app.actions.push(Action::SetEqBand(7, db));
+                                app.actions.push(Action::SetEqBand(8, db));
+                                app.actions.push(Action::SetEqBand(9, db));
+                            }
+                        }
+                    }
+                    let hover_t = ui.ctx().animate_bool_responsive(
+                        handle_id.with("hover"),
+                        resp.hovered() || resp.dragged(),
+                    );
+                    let radius = 5.0 + 2.0 * hover_t;
+                    painter.circle_filled(center, radius, palette.text);
+                    if resp.hovered() || resp.dragged() {
+                        let db = app.settings.eq_bands_db[PRIMARY_BAND[i]];
+                        painter.text(
+                            pos2(center.x, (center.y - 14.0).max(rect.top() + 8.0)),
+                            egui::Align2::CENTER_BOTTOM,
+                            format!("{db:+.1} dB"),
+                            theme::semibold(11.0),
+                            palette.text,
+                        );
+                    }
+                }
+            }
+
+            ui.add_space(10.0);
+            // Bottom-right inside card: "Redefinir" pill button
+            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                if theme::pill_button(ui, &palette, &gettext(locale, "Reset"), false).clicked() {
+                    app.actions.push(Action::ApplyEqPreset(0));
+                }
+            });
+        });
 }
 
 #[cfg(test)]

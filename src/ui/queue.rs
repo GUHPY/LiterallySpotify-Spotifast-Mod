@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use egui::{Align, Frame, Layout, Margin};
+use egui::{Align, CornerRadius, Frame, Layout, Margin, Rect, Sense, pos2, vec2};
 
 use crate::api::models::PlayableItem;
 use crate::app::App;
@@ -50,81 +50,24 @@ pub fn side_panel(app: &mut App, ui: &mut egui::Ui) {
         .show_separator_line(false)
         .frame(
             Frame::new()
-                .fill(palette.panel)
-                .inner_margin(Margin::symmetric(12, 12)),
+                .fill(palette.window)
+                .inner_margin(Margin {
+                    left: 0,
+                    right: theme::PANEL_GAP as i8,
+                    top: 0,
+                    bottom: 0,
+                }),
         );
     let response = panel.show(ui, |ui| {
-        let window_controls = super::window_controls_reservation(
-            ui.ctx(),
-            app.show_queue_panel,
-            app.show_lyrics_panel,
-            ui.available_width(),
-        );
-        ui.add_space(window_controls.queue_top);
-        // Measure buttons first and give the remaining width to the chips.
-        // Without `shrink_left`, wrapped chips can overlap the close button.
-        let tab = app.queue_tab;
-        let offer_save = tab == QueueTab::Queue && !app.queue_playlist_uris().is_empty();
-        let mut picked = None;
-        let mut close = false;
-        let mut save = false;
-        egui::Sides::new().shrink_left().show(
-            ui,
-            |ui| {
-                ui.add_space(4.0);
-                picked = widgets::chips(
-                    ui,
-                    &palette,
-                    &[
-                        (QueueTab::Queue, &gettext(app.locale, "Queue")),
-                        (QueueTab::Recents, &gettext(app.locale, "Recent")),
-                    ],
-                    tab,
-                );
-            },
-            |ui| {
-                close = theme::icon_button(
-                    ui,
-                    Icon::X,
-                    18.0,
-                    palette.secondary,
-                    palette.text,
-                    &gettext(app.locale, "Close"),
-                )
-                .clicked();
-                save = save_button(ui, &palette, offer_save, app.locale);
-            },
-        );
-        if let Some(tab) = picked {
-            app.actions.push(Action::SetQueueTab(tab));
-        }
-        if close {
-            app.actions.push(Action::ToggleQueuePanel);
-        }
-        if save {
-            app.actions.push(Action::SaveQueueAsPlaylist);
-        }
-        ui.add_space(8.0);
-        // Lazy load recents when tab becomes visible.
-        if app.queue_tab == QueueTab::Recents
-            && !app.recents.loading
-            && !app.recents.complete
-            && app.recents.items.is_empty()
-            && app.recents.error.is_none()
-        {
-            app.actions.push(Action::LoadMoreRecents);
-        }
-        crate::autoscroll::show(
-            ui,
-            egui::ScrollArea::vertical()
-                .id_salt("queue-panel-scroll")
-                .auto_shrink([false, false]),
-            egui::Vec2b::new(false, true),
-            |ui| match app.queue_tab {
-                QueueTab::Queue => contents(app, ui, true),
-                QueueTab::Recents => recents_contents(app, ui),
-            },
-        );
+        let card_rect = ui.available_rect_before_wrap();
+        Frame::new()
+            .fill(palette.panel)
+            .corner_radius(egui::CornerRadius::same(theme::RADIUS))
+            .inner_margin(Margin::symmetric(12, 12))
+            .show(ui, |ui| {
+                ui.set_min_height((card_rect.height() - 24.0).max(0.0));
+                content(app, ui);
+            });
     });
     let width = response.response.rect.width();
     if (width - app.settings.queue_width).abs() > 1.0
@@ -133,6 +76,88 @@ pub fn side_panel(app: &mut App, ui: &mut egui::Ui) {
         app.settings.queue_width = width;
         app.actions.push(Action::SettingsChanged);
     }
+}
+
+pub fn content(app: &mut App, ui: &mut egui::Ui) {
+    let palette = app.palette;
+    let tab = app.queue_tab;
+    let offer_save = tab == QueueTab::Queue && !app.queue_playlist_uris().is_empty();
+    let mut picked = None;
+    let mut close = false;
+    let mut save = false;
+    egui::Sides::new().shrink_left().show(
+        ui,
+        |ui| {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 20.0;
+                let queue_str = gettext(app.locale, "Queue");
+                let recents_str = gettext(app.locale, "Recent");
+                for (tab_val, label) in [
+                    (QueueTab::Queue, queue_str),
+                    (QueueTab::Recents, recents_str),
+                ] {
+                    let active = tab == tab_val;
+                    let text_color = if active { palette.text } else { palette.secondary };
+                    let galley = ui.painter().layout_no_wrap(label.to_string(), theme::bold(15.0), text_color);
+                    let (tab_rect, resp) = ui.allocate_exact_size(vec2(galley.size().x, 28.0), Sense::click());
+                    let text_pos = pos2(tab_rect.left(), tab_rect.top() + 2.0);
+                    let final_color = if resp.hovered() && !active { palette.text } else { text_color };
+                    ui.painter().galley(text_pos, galley, final_color);
+                    if active {
+                        let line_rect = Rect::from_min_size(
+                            pos2(tab_rect.left(), tab_rect.bottom() - 3.0),
+                            vec2(tab_rect.width(), 3.0),
+                        );
+                        ui.painter().rect_filled(line_rect, CornerRadius::same(2), palette.accent);
+                    }
+                    if resp.clicked() {
+                        picked = Some(tab_val);
+                    }
+                }
+            });
+        },
+        |ui| {
+            close = theme::icon_button(
+                ui,
+                Icon::X,
+                18.0,
+                palette.secondary,
+                palette.text,
+                &gettext(app.locale, "Close"),
+            )
+            .clicked();
+            save = save_button(ui, &palette, offer_save, app.locale);
+        },
+    );
+    if let Some(tab) = picked {
+        app.actions.push(Action::SetQueueTab(tab));
+    }
+    if close {
+        app.actions.push(Action::ToggleQueuePanel);
+    }
+    if save {
+        app.actions.push(Action::SaveQueueAsPlaylist);
+    }
+    ui.add_space(8.0);
+    if app.queue_tab == QueueTab::Recents
+        && !app.recents.loading
+        && !app.recents.complete
+        && app.recents.items.is_empty()
+        && app.recents.error.is_none()
+    {
+        app.actions.push(Action::LoadMoreRecents);
+    }
+    crate::autoscroll::show(
+        ui,
+        egui::ScrollArea::vertical()
+            .id_salt("queue-panel-scroll")
+            .auto_shrink([false, false]),
+        egui::Vec2b::new(false, true),
+        |ui| match app.queue_tab {
+            QueueTab::Queue => contents(app, ui, true),
+            QueueTab::Recents => recents_contents(app, ui),
+        },
+    );
 }
 
 /// Saves the current and upcoming queue as a playlist.

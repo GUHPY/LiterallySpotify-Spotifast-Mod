@@ -3253,3 +3253,448 @@ msgstr ""
 
 #~ msgid "Reduce lyrics motion"
 #~ msgstr "減少歌詞動畫"
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr "調整縮放等級，讓 Spotify 更符合你的偏好與需求。"
+
+
+msgid "All"
+msgstr "全部"
+
+
+msgid "Alphabetical"
+msgstr "依字母排序"
+
+
+msgid "Audiobooks"
+msgstr "有聲書"
+
+
+msgid "Blend"
+msgstr "融合播放清單"
+
+
+msgid "Browse"
+msgstr "瀏覽"
+
+
+msgid "Clear recent searches"
+msgstr "清除最近搜尋"
+
+
+msgid "Collapse Your Library"
+msgstr "收合音樂庫"
+
+
+msgid "Compact grid"
+msgstr "緊湊網格"
+
+
+msgid "Compact list"
+msgstr "緊湊清單"
+
+
+msgid "Connect"
+msgstr "連線"
+
+
+msgid "Creator"
+msgstr "建立者"
+
+
+msgid "Default"
+msgstr "預設"
+
+
+msgid "Dense"
+msgstr "緊湊"
+
+
+msgid "Don't see your device?"
+msgstr "找不到你的裝置？"
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr "使用 Spotify 自己的標題列和視窗按鈕，而不是桌面環境提供的。"
+
+
+msgid "Enter full screen"
+msgstr "進入全螢幕"
+
+
+msgid "Expand Your Library"
+msgstr "展開音樂庫"
+
+
+msgid "Friend Activity"
+msgstr "好友動態"
+
+
+msgid "Go back"
+msgstr "返回"
+
+
+msgid "Go forward"
+msgstr "前進"
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr "前往 Spotify 應用程式的「設定 > 聆聽動態與統計」管理你的聆聽動態。"
+
+
+msgid "Hide"
+msgstr "隱藏"
+
+
+msgid "Jam"
+msgstr "Jam"
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr "讓 Spotify 上的好友和追蹤者看到你正在聽什麼。"
+
+
+msgid "Listen now"
+msgstr "立即聆聽"
+
+
+msgid "Listen together from anywhere"
+msgstr "隨時隨地一起聽"
+
+
+msgid "Listening activity"
+msgstr "聆聽動態"
+
+
+msgid "Lyrics preview"
+msgstr "歌詞預覽"
+
+
+msgid "Made for"
+msgstr "為你打造："
+
+
+msgid "Menu"
+msgstr "選單"
+
+
+msgid "Mixed playlist"
+msgstr "混音播放清單"
+
+
+msgid "More options"
+msgstr "更多選項"
+
+
+msgid "Music"
+msgstr "音樂"
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr "Spotify 重新啟動時，這台電腦上正在播放的音樂將會停止。"
+
+
+msgid "Music video"
+msgstr "音樂影片"
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr "新內容會顯示在這裡。追蹤喜愛的藝人和 Podcast，掌握最新動態。"
+
+
+msgid "No other devices found"
+msgstr "找不到其他裝置"
+
+
+msgid "On other networks"
+msgstr "其他網路"
+
+
+msgid "Open Miniplayer"
+msgstr "開啟迷你播放器"
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr "播放需要 Spotify Premium。免費帳戶可以瀏覽和搜尋，但無法透過 Spotify 播放音樂。"
+
+
+msgid "Podcasts and shows"
+msgstr "Podcast 與節目"
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr "為你精選的熱門歌曲與推薦內容。"
+
+
+msgid "Popular songs and trending stations"
+msgstr "熱門歌曲與電台"
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr "Spotify 未向此用戶端提供真實好友動態。"
+
+
+msgid "Related music videos"
+msgstr "相關音樂影片"
+
+
+msgid "Reset"
+msgstr "重設"
+
+
+msgid "Saved & downloaded"
+msgstr "已儲存及已下載"
+
+
+msgid "Show all"
+msgstr "顯示全部"
+
+
+msgid "Show more"
+msgstr "顯示更多"
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr "透過瀏覽器登入。Spotify 永遠不會看到你的密碼。本機播放需要 Spotify Premium。"
+
+
+msgid "Song"
+msgstr "歌曲"
+
+
+msgid "Spacious"
+msgstr "寬鬆"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr "Spotify 會隱藏到系統匣。可從系統匣選單或按 Cmd+Q 結束。"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr "Spotify 會隱藏到系統匣。可從系統匣選單或按 Ctrl+Q 結束。"
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr "Spotify 的預設連線會與其他聽眾共用 Spotify 的要求上限。繁忙時，載入音樂和使用播放控制項可能需要更久。"
+
+
+msgid "Standard grid"
+msgstr "標準網格"
+
+
+msgid "Standard list"
+msgstr "標準清單"
+
+
+msgid "Start a Jam"
+msgstr "開始 Jam"
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr "你追蹤的藝人、Podcast 和節目的最新內容。"
+
+
+msgid "There are no new releases for you right now."
+msgstr "目前沒有為你推薦的新內容。"
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr "Spotify 未向此用戶端提供這些功能。"
+
+
+msgid "This computer"
+msgstr "這部電腦"
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr "無法從 Spotify 變更此裝置的音量"
+
+
+msgid "What's New"
+msgstr "最新動態"
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr "你也可以按 Cmd+- 或 Cmd++ 調整縮放。"
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr "你也可以按 Ctrl+- 或 Ctrl++ 調整縮放。"
+
+
+msgid "Your Episodes"
+msgstr "你的單集"
+
+
+msgid "Your Library"
+msgstr "音樂庫"
+
+
+msgid "Zoom level"
+msgstr "縮放等級"
+
+
+msgid "Bass Booster"
+msgstr "增強低音"
+
+
+msgid "Bass Reducer"
+msgstr "減弱低音"
+
+
+msgid "Classical"
+msgstr "古典"
+
+
+msgid "Club"
+msgstr "夜店"
+
+
+msgid "Custom"
+msgstr "自訂"
+
+
+msgid "Dance"
+msgstr "舞曲"
+
+
+msgid "Flat"
+msgstr "平直"
+
+
+msgid "Full Bass"
+msgstr "強勁低音"
+
+
+msgid "Full Bass & Treble"
+msgstr "強勁低音與高音"
+
+
+msgid "Full Treble"
+msgstr "強勁高音"
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr "筆電喇叭／耳機"
+
+
+msgid "Large Hall"
+msgstr "大廳"
+
+
+msgid "Live"
+msgstr "現場"
+
+
+msgid "Loudness"
+msgstr "響度"
+
+
+msgid "Night Listening"
+msgstr "夜間聆聽"
+
+
+msgid "Party"
+msgstr "派對"
+
+
+msgid "Pop"
+msgstr "流行"
+
+
+msgid "Recents"
+msgstr "最近播放"
+
+
+msgid "Reggae"
+msgstr "雷鬼"
+
+
+msgid "Rock"
+msgstr "搖滾"
+
+
+msgid "Ska"
+msgstr "斯卡"
+
+
+msgid "Small Speakers"
+msgstr "小型喇叭"
+
+
+msgid "Soft"
+msgstr "柔和"
+
+
+msgid "Soft Rock"
+msgstr "輕搖滾"
+
+
+msgid "Sort by"
+msgstr "排序依據"
+
+
+msgid "Spoken Word"
+msgstr "語音"
+
+
+msgid "Techno"
+msgstr "鐵克諾"
+
+
+msgid "Treble Booster"
+msgstr "增強高音"
+
+
+msgid "View as"
+msgstr "顯示方式"
+
+
+msgid "Vocal Booster"
+msgstr "增強人聲"
+
+
+msgid "Show Now Playing view"
+msgstr "顯示現正播放畫面"
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr "將好友的音樂品味融合至同一播放清單"
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr "用歌曲或單集建立播放清單"
+
+
+msgid "Mix songs with smooth transitions"
+msgstr "以流暢過渡混合歌曲"
+
+
+msgid "Organize your playlists"
+msgstr "整理你的播放清單"
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr "關於藝人"
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr "歌曲製作人員"
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr "接著播放"
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr "開啟播放佇列"
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr "查看歌曲製作人員"

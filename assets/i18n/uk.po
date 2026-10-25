@@ -3374,3 +3374,448 @@ msgstr ""
 
 #~ msgid "Spotify does not let apps remove one queued song."
 #~ msgstr "Spotify не дозволяє застосункам видаляти з черги окрему пісню."
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr "Налаштуйте масштаб Spotify відповідно до своїх уподобань і потреб."
+
+
+msgid "All"
+msgstr "Усе"
+
+
+msgid "Alphabetical"
+msgstr "За абеткою"
+
+
+msgid "Audiobooks"
+msgstr "Аудіокниги"
+
+
+msgid "Blend"
+msgstr "Мікс"
+
+
+msgid "Browse"
+msgstr "Огляд"
+
+
+msgid "Clear recent searches"
+msgstr "Очистити останні пошукові запити"
+
+
+msgid "Collapse Your Library"
+msgstr "Згорнути бібліотеку"
+
+
+msgid "Compact grid"
+msgstr "Компактна сітка"
+
+
+msgid "Compact list"
+msgstr "Компактний список"
+
+
+msgid "Connect"
+msgstr "Підключитися"
+
+
+msgid "Creator"
+msgstr "Автор"
+
+
+msgid "Default"
+msgstr "Типовий"
+
+
+msgid "Dense"
+msgstr "Щільний"
+
+
+msgid "Don't see your device?"
+msgstr "Не бачите свій пристрій?"
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr "Використовувати власний рядок заголовка й кнопки вікна Spotify замість елементів стільниці."
+
+
+msgid "Enter full screen"
+msgstr "Повноекранний режим"
+
+
+msgid "Expand Your Library"
+msgstr "Розгорнути бібліотеку"
+
+
+msgid "Friend Activity"
+msgstr "Активність друзів"
+
+
+msgid "Go back"
+msgstr "Назад"
+
+
+msgid "Go forward"
+msgstr "Уперед"
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr "Керуйте активністю в застосунку Spotify: Налаштування > Активність прослуховування та статистика."
+
+
+msgid "Hide"
+msgstr "Приховати"
+
+
+msgid "Jam"
+msgstr "Jam"
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr "Дозвольте друзям і підписникам у Spotify бачити, що ви слухаєте."
+
+
+msgid "Listen now"
+msgstr "Слухати зараз"
+
+
+msgid "Listen together from anywhere"
+msgstr "Слухайте разом звідусіль"
+
+
+msgid "Listening activity"
+msgstr "Активність прослуховування"
+
+
+msgid "Lyrics preview"
+msgstr "Попередній перегляд тексту"
+
+
+msgid "Made for"
+msgstr "Для"
+
+
+msgid "Menu"
+msgstr "Меню"
+
+
+msgid "Mixed playlist"
+msgstr "Міксований плейліст"
+
+
+msgid "More options"
+msgstr "Інші параметри"
+
+
+msgid "Music"
+msgstr "Музика"
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr "Музика, що відтворюється на цьому комп’ютері, зупиниться, коли Spotify перезапуститься."
+
+
+msgid "Music video"
+msgstr "Відеокліп"
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr "Нові релізи з'являться тут. Стежте за улюбленими виконавцями й подкастами, щоб нічого не пропустити."
+
+
+msgid "No other devices found"
+msgstr "Інших пристроїв не знайдено"
+
+
+msgid "On other networks"
+msgstr "В інших мережах"
+
+
+msgid "Open Miniplayer"
+msgstr "Відкрити мініплеєр"
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr "Для відтворення потрібен Spotify Premium. Безкоштовні облікові записи можуть переглядати й шукати, але не можуть відтворювати музику через Spotify."
+
+
+msgid "Podcasts and shows"
+msgstr "Подкасти та шоу"
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr "Популярні треки та рекомендації для вас."
+
+
+msgid "Popular songs and trending stations"
+msgstr "Популярні треки та станції"
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr "Spotify не надає цьому клієнту справжню активність друзів."
+
+
+msgid "Related music videos"
+msgstr "Пов'язані відеокліпи"
+
+
+msgid "Reset"
+msgstr "Скинути"
+
+
+msgid "Saved & downloaded"
+msgstr "Збережено й завантажено"
+
+
+msgid "Show all"
+msgstr "Показати все"
+
+
+msgid "Show more"
+msgstr "Показати більше"
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr "Вхід виконується через браузер. Spotify ніколи не бачить ваш пароль. Для локального відтворення потрібен Spotify Premium."
+
+
+msgid "Song"
+msgstr "Трек"
+
+
+msgid "Spacious"
+msgstr "Просторий"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr "Spotify згортається в системний трей. Вийти можна через меню трею або за допомогою Cmd+Q."
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr "Spotify згортається в системний трей. Вийти можна через меню трею або за допомогою Ctrl+Q."
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr "Типове з’єднання Spotify ділить ліміт запитів Spotify з іншими слухачами. Коли навантаження велике, музика може завантажуватися довше, а елементи керування відтворенням можуть реагувати повільніше."
+
+
+msgid "Standard grid"
+msgstr "Звичайна сітка"
+
+
+msgid "Standard list"
+msgstr "Звичайний список"
+
+
+msgid "Start a Jam"
+msgstr "Почати Jam"
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr "Нові релізи виконавців, подкастів і шоу, за якими ви стежите."
+
+
+msgid "There are no new releases for you right now."
+msgstr "Наразі для вас немає нових релізів."
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr "Spotify не надає цих функцій цьому клієнту."
+
+
+msgid "This computer"
+msgstr "Цей комп'ютер"
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr "Гучність цього пристрою не можна змінити зі Spotify"
+
+
+msgid "What's New"
+msgstr "Що нового"
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr "Масштаб також можна змінити за допомогою Cmd+- або Cmd++."
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr "Масштаб також можна змінити за допомогою Ctrl+- або Ctrl++."
+
+
+msgid "Your Episodes"
+msgstr "Ваші епізоди"
+
+
+msgid "Your Library"
+msgstr "Ваша бібліотека"
+
+
+msgid "Zoom level"
+msgstr "Масштаб"
+
+
+msgid "Bass Booster"
+msgstr "Підсилення басів"
+
+
+msgid "Bass Reducer"
+msgstr "Зменшення басів"
+
+
+msgid "Classical"
+msgstr "Класика"
+
+
+msgid "Club"
+msgstr "Клуб"
+
+
+msgid "Custom"
+msgstr "Власний"
+
+
+msgid "Dance"
+msgstr "Танцювальна"
+
+
+msgid "Flat"
+msgstr "Рівний"
+
+
+msgid "Full Bass"
+msgstr "Потужні баси"
+
+
+msgid "Full Bass & Treble"
+msgstr "Потужні баси та високі частоти"
+
+
+msgid "Full Treble"
+msgstr "Потужні високі частоти"
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr "Динаміки ноутбука / Навушники"
+
+
+msgid "Large Hall"
+msgstr "Велика зала"
+
+
+msgid "Live"
+msgstr "Наживо"
+
+
+msgid "Loudness"
+msgstr "Тонкомпенсація"
+
+
+msgid "Night Listening"
+msgstr "Нічне прослуховування"
+
+
+msgid "Party"
+msgstr "Вечірка"
+
+
+msgid "Pop"
+msgstr "Поп"
+
+
+msgid "Recents"
+msgstr "Нещодавні"
+
+
+msgid "Reggae"
+msgstr "Регі"
+
+
+msgid "Rock"
+msgstr "Рок"
+
+
+msgid "Ska"
+msgstr "Ска"
+
+
+msgid "Small Speakers"
+msgstr "Малі динаміки"
+
+
+msgid "Soft"
+msgstr "М'який"
+
+
+msgid "Soft Rock"
+msgstr "Софт-рок"
+
+
+msgid "Sort by"
+msgstr "Сортувати за"
+
+
+msgid "Spoken Word"
+msgstr "Мовлення"
+
+
+msgid "Techno"
+msgstr "Техно"
+
+
+msgid "Treble Booster"
+msgstr "Підсилення високих частот"
+
+
+msgid "View as"
+msgstr "Вигляд"
+
+
+msgid "Vocal Booster"
+msgstr "Підсилення вокалу"
+
+
+msgid "Show Now Playing view"
+msgstr "Показати екран Зараз грає"
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr "Поєднайте музичні смаки друзів в одному плейлісті"
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr "Створіть плейліст із треків або епізодів"
+
+
+msgid "Mix songs with smooth transitions"
+msgstr "Міксуйте треки з плавними переходами"
+
+
+msgid "Organize your playlists"
+msgstr "Упорядкуйте свої плейлісти"
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr "Про виконавця"
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr "Учасники запису"
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr "Далі"
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr "Відкрити чергу"
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr "Переглянути учасників запису"

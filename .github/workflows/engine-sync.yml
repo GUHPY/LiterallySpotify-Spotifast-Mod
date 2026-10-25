@@ -1,0 +1,49 @@
+name: Prepare an engine update
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_ref:
+        description: Upstream tag or commit to integrate
+        required: true
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  candidate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: '1.98'
+      - uses: Swatinem/rust-cache@v2
+      - name: Add the public upstream remote
+        run: git remote add upstream https://github.com/crmne/spotifast.git
+      - name: Integrate core and validate the UI boundary
+        env:
+          UPSTREAM_REF: ${{ inputs.upstream_ref }}
+        shell: pwsh
+        run: |
+          python packaging/update-engine.py --ref $env:UPSTREAM_REF --apply
+          if ($LASTEXITCODE -ne 0) { throw 'Engine integration needs manual review. UI files were not replaced.' }
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          base: main
+          branch: codex/engine-update
+          title: Integrate validated upstream engine changes
+          commit-message: Integrate upstream core while preserving LiterallySpotify UI
+          body: Core files and allowed engine dependencies only. The protected UI fingerprints, unchanged UI dependencies and the declared UI regression gate were verified before this draft was created. Review the engine-source.json change and run native playback checks before release.
+          draft: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: engine-integration-report
+          path: |
+            target/engine-sync/plan.json
+            target/ui-regression-tests.log

@@ -1,0 +1,122 @@
+[
+  {
+    "file": "mod/live-devices.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "mod/live-home.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      2560,
+      1392
+    ]
+  },
+  {
+    "file": "mod/live-liked.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "mod/live-lyrics.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "mod/live-queue.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "mod/live-search-preview.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "original/live-devices.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "original/live-home.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "original/live-liked.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "original/live-lyrics.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "original/live-queue.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "spotify/live-devices.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "spotify/live-home.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "spotify/live-liked.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  },
+  {
+    "file": "spotify/live-queue.png",
+    "mode": "native authenticated application",
+    "dimensions": [
+      1600,
+      900
+    ]
+  }
+]

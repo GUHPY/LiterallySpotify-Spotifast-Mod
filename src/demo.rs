@@ -837,6 +837,13 @@ pub fn apply_flags(app: &mut App, page: Option<&str>, show: Option<&str>) {
     }
     for surface in show.unwrap_or("").split(',').map(str::trim) {
         match surface {
+            "home-no-promo" => app.settings.home.promo.visible = false,
+            "search-preview" => {
+                app.open(Page::Home);
+                app.settings.home.promo.visible = false;
+                app.search.focus_requested = true;
+            }
+            "friend-activity" => app.show_friend_activity = true,
             "presaved" => {
                 for page in app.album_pages.values_mut() {
                     if let Some(data) = &mut page.prerelease {
@@ -3225,7 +3232,7 @@ mod tests {
         let (ctx, mut app) = accessible_app("settings-search-text");
         for (query, row) in [
             ("without a cover", "Compact track list"),
-            ("Ctrl+0", "Interface zoom"),
+            ("Ctrl+0", "Zoom level"),
             ("Rust", "About"),
             (
                 "Downloads in the background",
@@ -5910,90 +5917,53 @@ mod tests {
         }
     }
 
-    /// Rule: the interface zoom control puts minus on the left and plus
-    /// on the right. The setting row's control is right-to-left, which
-    /// used to reverse the two buttons.
+    /// The zoom ruler and presets change the real scale, and Reset restores it.
     #[test]
-    fn interface_zoom_puts_minus_on_the_left() {
-        let root =
-            std::env::temp_dir().join(format!("spotifast-zoom-order-test-{}", std::process::id()));
-        let dirs = AppDirs {
-            config: root.join("config"),
-            state: root.join("state"),
-            cache: root.join("cache"),
-        };
-        let ctx = egui::Context::default();
-        let waker = crate::backend::Waker::default();
-        waker.attach(&ctx);
-        let mut app = App::new(
-            &waker,
-            dirs,
-            Settings::default(),
-            AppOptions {
-                media_controls: false,
-                restore_sign_in: false,
-                tray: false,
-            },
-        );
-        app.attach(&ctx);
-        populate(&mut app);
-        app.settings.zoom = 1.0;
-        app.open(Page::Settings);
-
-        let mut placed: Vec<(String, f32, f32)> = Vec::new();
-        let input = egui::RawInput {
-            screen_rect: Some(egui::Rect::from_min_size(
-                egui::Pos2::ZERO,
-                egui::vec2(1280.0, 4000.0),
-            )),
-            ..Default::default()
-        };
-        for _ in 0..2 {
-            placed.clear();
-            let mut output = ctx.run_ui(input.clone(), |ui| app.frame_ui(ui));
-            output.textures_delta.clear();
-            fn walk(shape: &egui::epaint::Shape, placed: &mut Vec<(String, f32, f32)>) {
-                match shape {
-                    egui::epaint::Shape::Text(text) => {
-                        placed.push((text.galley.job.text.clone(), text.pos.x, text.pos.y))
-                    }
-                    egui::epaint::Shape::Vec(shapes) => {
-                        shapes.iter().for_each(|shape| walk(shape, placed))
-                    }
-                    _ => {}
-                }
-            }
-            for clipped in &output.shapes {
-                walk(&clipped.shape, &mut placed);
-            }
+    fn interface_zoom_presets_ruler_and_reset_change_the_actual_scale() {
+        let (ctx, mut app) = accessible_app("zoom-ruler");
+        ctx.data_mut(|data| data.insert_temp(egui::Id::new("settings-filter"), "zoom".to_owned()));
+        let mut text = view_frame(&ctx, &mut app, vec![], crate::ui::settings::show);
+        for label in [
+            "Dense", "Default", "Spacious", "70%", "100%", "130%", "Reset",
+        ] {
+            assert!(
+                text.iter().any(|(value, _)| value == label),
+                "missing {label}"
+            );
         }
-        let percent = placed
-            .iter()
-            .find(|(text, _, _)| text == "100%")
-            .unwrap_or_else(|| panic!("the zoom percent was never drawn: {placed:?}"));
-        let on_row = |label: &str| -> f32 {
-            placed
+        for (label, expected) in [("130%", 1.3), ("Dense", 0.9), ("Reset", 1.0)] {
+            let pos = text
                 .iter()
-                .filter(|(text, _, y)| text == label && (y - percent.2).abs() < 8.0)
-                .min_by(|a, b| (a.1 - percent.1).abs().total_cmp(&(b.1 - percent.1).abs()))
-                .unwrap_or_else(|| panic!("{label} was never drawn next to 100%: {placed:?}"))
+                .find(|(value, _)| value == label)
+                .unwrap()
                 .1
-        };
-        let minus = on_row("-");
-        let plus = on_row("+");
-        assert!(
-            minus < percent.1 && percent.1 < plus,
-            "zoom control should read minus, percent, plus; got - at {minus}, 100% at {}, + at {plus}",
-            percent.1
-        );
+                .center();
+            view_frame(
+                &ctx,
+                &mut app,
+                vec![
+                    egui::Event::PointerMoved(pos),
+                    egui::Event::PointerButton {
+                        pos,
+                        button: egui::PointerButton::Primary,
+                        pressed: true,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                    egui::Event::PointerButton {
+                        pos,
+                        button: egui::PointerButton::Primary,
+                        pressed: false,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                ],
+                crate::ui::settings::show,
+            );
+            assert!((app.settings.zoom - expected).abs() < 0.001, "{label}");
+            text = view_frame(&ctx, &mut app, vec![], crate::ui::settings::show);
+        }
         app.backend.shutdown();
-        let _ = std::fs::remove_dir_all(root);
     }
 
-    /// The frame rate is a dial with detents: it stops at the rates
-    /// worth having, names the one it is on, and moving it one notch
-    /// lands on the next of them rather than somewhere in between.
-    #[cfg(feature = "milkdrop")]
     #[test]
     fn the_frame_rate_dial_steps_between_its_stops() {
         let root =
@@ -9836,4 +9806,754 @@ mod tests {
         );
         app.backend.shutdown();
     }
+    #[test]
+    fn listening_activity_uses_an_onboarding_screen_without_invented_friends() {
+        let (ctx, mut app) = accessible_app("listening-onboarding");
+        for locale in [
+            crate::i18n::Locale::English,
+            crate::i18n::Locale::PortugueseBrazil,
+        ] {
+            app.locale = locale;
+            let text = view_frame(&ctx, &mut app, vec![], crate::ui::friend_activity_content);
+            assert!(
+                text.iter()
+                    .any(|(value, _)| value
+                        == crate::i18n::gettext(locale, "Listening activity").as_ref())
+            );
+            for invented in ["Lucas Silva", "Marina Costa", "Pedro Almeida"] {
+                assert!(!text.iter().any(|(value, _)| value.contains(invented)));
+            }
+            let label = crate::i18n::gettext(locale, "Settings");
+            let pos = text
+                .iter()
+                .find(|(value, _)| value == label.as_ref())
+                .unwrap()
+                .1
+                .center();
+            app.actions.clear();
+            view_frame(
+                &ctx,
+                &mut app,
+                vec![
+                    egui::Event::PointerMoved(pos),
+                    egui::Event::PointerButton {
+                        pos,
+                        button: egui::PointerButton::Primary,
+                        pressed: true,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                    egui::Event::PointerButton {
+                        pos,
+                        button: egui::PointerButton::Primary,
+                        pressed: false,
+                        modifiers: egui::Modifiers::NONE,
+                    },
+                ],
+                crate::ui::friend_activity_content,
+            );
+            assert!(app.actions.iter().any(
+                |action| matches!(action, Action::OpenUrl(url) if url.contains("listening-activity"))
+            ));
+        }
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn now_playing_copy_and_more_buttons_dispatch_real_actions() {
+        use egui::accesskit::{Action as AccessibleAction, Role};
+        let (ctx, mut app) = accessible_app("npv-actions");
+        app.show_lyrics_panel = true;
+        let mut time = 0.0;
+        let mut draw = |app: &mut App, mut events: Vec<egui::Event>| {
+            time += 0.5;
+            events.insert(0, egui::Event::PointerMoved(egui::pos2(760.0, 100.0)));
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    time: Some(time),
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(900.0, 800.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ui| crate::ui::right_bento_panel(app, ui),
+            );
+            output.textures_delta.clear();
+            output.platform_output.accesskit_update.unwrap()
+        };
+        for _ in 0..4 {
+            draw(&mut app, vec![]);
+        }
+        let tree = draw(&mut app, vec![]);
+        let copy = accessible_node(&tree, "Copy link", Role::Button);
+        let more = accessible_node(&tree, "More options", Role::Button);
+        app.actions.clear();
+        draw(
+            &mut app,
+            vec![accessible_action(copy, AccessibleAction::Click, None)],
+        );
+        assert!(
+            app.actions
+                .iter()
+                .any(|action| matches!(action, Action::CopyLink(_)))
+        );
+        draw(
+            &mut app,
+            vec![accessible_action(more, AccessibleAction::Click, None)],
+        );
+        let tree = draw(&mut app, vec![]);
+        assert!(
+            tree.nodes
+                .iter()
+                .any(|(_, node)| node.label() == Some("Add to queue")),
+            "the song menu must open"
+        );
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn create_opens_the_menu_before_the_playlist_dialog() {
+        use egui::accesskit::{Action as AccessibleAction, Role};
+        let (ctx, mut app) = accessible_app("create-menu");
+        let draw = |app: &mut App, events| {
+            let mut output = ctx.run_ui(egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 800.0))), events, ..Default::default() }, |ui| crate::ui::sidebar::show(app, ui));
+            output.textures_delta.clear();
+            output.platform_output.accesskit_update.unwrap()
+        };
+        draw(&mut app, vec![]);
+        let tree = draw(&mut app, vec![]);
+        let create = accessible_node(&tree, "Create", Role::Button);
+        app.actions.clear();
+        draw(&mut app, vec![accessible_action(create, AccessibleAction::Click, None)]);
+        let tree = draw(&mut app, vec![]);
+        assert!(!app.actions.iter().any(|action| matches!(action, Action::ShowDialog(_))));
+        let playlist = accessible_node(&tree, "Playlist", Role::Button);
+        draw(&mut app, vec![accessible_action(playlist, AccessibleAction::Click, None)]);
+        assert!(app.actions.iter().any(|action| matches!(action, Action::ShowDialog(crate::model::Dialog::CreatePlaylist { .. }))));
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn the_home_promo_menu_hides_the_featured_card() {
+        use egui::accesskit::{Action as AccessibleAction, Role};
+        let (ctx, mut app) = accessible_app("hide-promo");
+        let draw = |app: &mut App, events| {
+            let mut output = ctx.run_ui(egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1000.0, 800.0))), events, ..Default::default() }, |ui| crate::ui::home::show(app, ui));
+            output.textures_delta.clear();
+            output.platform_output.accesskit_update.unwrap()
+        };
+        draw(&mut app, vec![]);
+        let tree = draw(&mut app, vec![]);
+        let more = accessible_node(&tree, "More options", Role::Button);
+        draw(&mut app, vec![accessible_action(more, AccessibleAction::Click, None)]);
+        let tree = draw(&mut app, vec![]);
+        let hide = accessible_node(&tree, "Hide", Role::Button);
+        draw(&mut app, vec![accessible_action(hide, AccessibleAction::Click, None)]);
+        assert!(!app.settings.home.promo.visible);
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::home::show);
+        assert!(!text.iter().any(|(value, _)| value == "Topsify Radio"));
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn the_central_scrollbar_preserves_the_theme_handle_opacity() {
+        let (ctx, mut app) = accessible_app("central-scrollbar-opacity");
+        app.show_lyrics_panel = false;
+        app.open(Page::Home);
+        let mut fills = Vec::new();
+        for frame in 0..4 {
+            let mut output = ctx.run_ui(egui::RawInput {
+                time: Some(frame as f64),
+                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 800.0))),
+                events: vec![egui::Event::PointerMoved(egui::pos2(700.0, 300.0))], ..Default::default()
+            }, |ui| app.frame_ui(ui));
+            fn collect(shape: &egui::epaint::Shape, fills: &mut Vec<egui::Color32>) {
+                match shape {
+                    egui::epaint::Shape::Rect(rect) if (rect.rect.width() - 8.0).abs() < 0.1 && rect.rect.height() > 28.0 && rect.rect.left() > 500.0 => fills.push(rect.fill),
+                    egui::epaint::Shape::Vec(shapes) => { for shape in shapes { collect(shape, fills); } }
+                    _ => {}
+                }
+            }
+            fills.clear();
+            for shape in &output.shapes { collect(&shape.shape, &mut fills); }
+            output.textures_delta.clear();
+        }
+        let expected = app.palette.text.gamma_multiply(ctx.global_style().spacing.scroll.active_handle_opacity);
+        assert!(fills.contains(&expected), "expected {expected:?}, drew {fills:?}");
+        app.backend.shutdown();
+    }
+
+
+    #[test]
+    fn the_collapsed_now_playing_strip_never_reserves_space() {
+        let (ctx, mut app) = accessible_app("npv-overlay-layout");
+        app.show_lyrics_panel = false;
+        app.show_queue_panel = false;
+        app.show_devices = false;
+        app.show_friend_activity = false;
+        let mut widths = Vec::new();
+        let mut opaque_fill = false;
+        for (frame, x) in [700.0, 1270.0, 1270.0, 700.0, 700.0]
+            .into_iter()
+            .enumerate()
+        {
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    time: Some(frame as f64),
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(1280.0, 800.0),
+                    )),
+                    events: vec![egui::Event::PointerMoved(egui::pos2(x, 400.0))],
+                    ..Default::default()
+                },
+                |ui| {
+                    let before = ui.available_rect_before_wrap();
+                    crate::ui::right_bento_panel(&mut app, ui);
+                    assert_eq!(
+                        ui.available_rect_before_wrap(),
+                        before,
+                        "the collapsed strip must allocate no layout space"
+                    );
+                    let overlay = ctx
+                        .data(|data| {
+                            data.get_temp::<egui::Rect>(egui::Id::new("npv-collapsed-strip-last-rect"))
+                        })
+                        .unwrap();
+                    assert_eq!(overlay.right(), before.right());
+                    widths.push(overlay.width() - crate::theme::PANEL_GAP);
+                },
+            );
+            let expected = app.palette.panel;
+            opaque_fill |= output.shapes.iter().any(|shape| matches!(&shape.shape, egui::epaint::Shape::Rect(rect) if rect.fill == expected));
+            output.textures_delta.clear();
+        }
+        assert_eq!(widths[0], 32.0);
+        assert_eq!(widths[2], 48.0);
+        assert_eq!(widths[4], 32.0);
+        assert!(
+            opaque_fill,
+            "the collapsed strip must cover the central content with the panel color"
+        );
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn home_shortcuts_change_the_home_tint_to_their_own_art() {
+        let (ctx, mut app) = accessible_app("home-hover-color");
+        app.settings.home.promo.visible = false;
+        let playlist = app.library.playlists.get().unwrap()[0].clone();
+        let blue = egui::Color32::from_rgb(20, 100, 220);
+        for image in &playlist.images {
+            app.accents.insert(image.url.clone(), blue);
+        }
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::home::show);
+        let shortcut = text
+            .iter()
+            .find(|(label, rect)| label == &playlist.name && rect.top() < 250.0)
+            .expect("playlist shortcut")
+            .1
+            .center();
+        view_frame(
+            &ctx,
+            &mut app,
+            vec![egui::Event::PointerMoved(shortcut)],
+            crate::ui::home::show,
+        );
+        let tint_id = egui::Id::new("home-hover-tint");
+        assert_eq!(
+            ctx.data(|data| data.get_temp::<egui::Color32>(tint_id)),
+            Some(blue)
+        );
+        let liked = text
+            .iter()
+            .find(|(label, rect)| label == "Liked Songs" && rect.top() < 250.0)
+            .unwrap()
+            .1
+            .center();
+        view_frame(
+            &ctx,
+            &mut app,
+            vec![egui::Event::PointerMoved(liked)],
+            crate::ui::home::show,
+        );
+        assert_eq!(
+            ctx.data(|data| data.get_temp::<egui::Color32>(tint_id)),
+            Some(egui::Color32::from_rgb(0x50, 0x38, 0xc8))
+        );
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn show_more_expands_the_preview_in_place_and_details_use_actual_data() {
+        use egui::accesskit::{Action as AccessibleAction, Role};
+        let (ctx, mut app) = accessible_app("npv-expand-lyrics");
+        app.show_lyrics_panel = true;
+        let mut time = 0.0;
+        let mut draw = |app: &mut App, mut events: Vec<egui::Event>| {
+            time += 0.5;
+            events.insert(0, egui::Event::PointerMoved(egui::pos2(750.0, 430.0)));
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    time: Some(time),
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(900.0, 1600.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ui| crate::ui::right_bento_panel(app, ui),
+            );
+            output.textures_delta.clear();
+            output.platform_output.accesskit_update.unwrap()
+        };
+        for _ in 0..4 {
+            draw(&mut app, vec![]);
+        }
+        let tree = draw(&mut app, vec![]);
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::right_bento_panel);
+        assert!(text.iter().any(|(label, _)| label == "About the artist"));
+        assert!(text.iter().any(|(label, _)| label == "Credits"));
+        assert!(
+            !text
+                .iter()
+                .any(|(label, _)| label == "Related music videos")
+        );
+        if let Some(next) = app.queue.get().and_then(|queue| queue.queue.first()) {
+            assert!(text.iter().any(|(label, _)| label == next.name()));
+        }
+        let more = accessible_node(&tree, "Show more", Role::Button);
+        app.actions.clear();
+        draw(
+            &mut app,
+            vec![accessible_action(more, AccessibleAction::Click, None)],
+        );
+        let tree = draw(&mut app, vec![]);
+        let expanded_id =
+            egui::Id::new("npv-lyrics-expanded").with(app.now_playing().map(|now| now.uri));
+        assert_eq!(
+            ctx.data(|data| data.get_temp::<bool>(expanded_id)),
+            Some(true)
+        );
+        assert!(app.lyrics_fullscreen.is_none());
+        assert!(
+            !app.actions
+                .iter()
+                .any(|action| matches!(action, Action::SetLyricsFullscreen(_)))
+        );
+        let less = accessible_node(&tree, "Show less", Role::Button);
+        draw(
+            &mut app,
+            vec![accessible_action(less, AccessibleAction::Click, None)],
+        );
+        assert_eq!(
+            ctx.data(|data| data.get_temp::<bool>(expanded_id)),
+            Some(false)
+        );
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn fullscreen_lyrics_have_the_song_menu_fullscreen_and_minimize_controls() {
+        use egui::accesskit::{Action as AccessibleAction, Role};
+        let (ctx, mut app) = accessible_app("lyrics-header-controls");
+        app.lyrics_fullscreen = Some(false);
+        let mut time = 0.0;
+        let mut draw = |app: &mut App, mut events: Vec<egui::Event>| {
+            time += 0.5;
+            events.insert(0, egui::Event::PointerMoved(egui::pos2(1160.0, 90.0)));
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    time: Some(time),
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(1280.0, 900.0),
+                    )),
+                    events,
+                    ..Default::default()
+                },
+                |ui| app.frame_ui(ui),
+            );
+            output.textures_delta.clear();
+            output.platform_output.accesskit_update.unwrap()
+        };
+        for _ in 0..4 {
+            draw(&mut app, vec![]);
+        }
+        let tree = draw(&mut app, vec![]);
+        accessible_node(&tree, "Minimize", Role::Button);
+        accessible_node(&tree, "Enter full screen", Role::Button);
+        let more = accessible_node(&tree, "More options", Role::Button);
+        draw(
+            &mut app,
+            vec![accessible_action(more, AccessibleAction::Click, None)],
+        );
+        let tree = draw(&mut app, vec![]);
+        assert!(
+            tree.nodes
+                .iter()
+                .any(|(_, node)| node.label() == Some("Add to queue"))
+        );
+        let credits = accessible_node(&tree, "View credits", Role::Button);
+        draw(
+            &mut app,
+            vec![accessible_action(credits, AccessibleAction::Click, None)],
+        );
+        assert!(matches!(app.dialog, Some(crate::model::Dialog::Credits(_))));
+        app.backend.shutdown();
+    }
+
+
+    #[test]
+    fn typing_search_keeps_the_current_page_and_enter_submits() {
+        let (ctx, mut app) = accessible_app("search-preview-navigation");
+        app.open(Page::Home);
+        app.search.query.clear();
+        app.actions.clear();
+        app.search.focus_requested = true;
+        view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        view_frame(
+            &ctx,
+            &mut app,
+            vec![egui::Event::Text("dance".into())],
+            crate::ui::topbar::show,
+        );
+        assert_eq!(app.search.query, "dance");
+        assert_eq!(*app.page(), Page::Home);
+        assert!(
+            !app.actions
+                .iter()
+                .any(|action| matches!(action, Action::Open(Page::Search) | Action::Search(_)))
+        );
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        assert!(
+            text.iter()
+                .any(|(label, rect)| label == "dance" && rect.top() > 56.0),
+            "the query must appear in a dropdown below the field"
+        );
+        view_frame(
+            &ctx,
+            &mut app,
+            vec![keyboard(egui::Key::Enter, egui::Modifiers::NONE)],
+            crate::ui::topbar::show,
+        );
+        assert!(
+            app.actions
+                .iter()
+                .any(|action| matches!(action, Action::Search(query) if query == "dance"))
+        );
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn search_dropdown_uses_current_results_and_keyboard_selection() {
+        let (ctx, mut app) = accessible_app("search-preview-results");
+        app.open(Page::Home);
+        let track = app
+            .search
+            .results
+            .get()
+            .unwrap()
+            .tracks
+            .as_ref()
+            .unwrap()
+            .items[0]
+            .clone();
+        app.search.query = "dance".into();
+        app.search.committed = "dance".into();
+        app.settings.search_history.clear();
+        app.search.focus_requested = true;
+        for _ in 0..3 {
+            view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        }
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        assert!(
+            text.iter()
+                .any(|(label, rect)| label == &track.name && rect.top() > 56.0)
+        );
+        app.actions.clear();
+        view_frame(
+            &ctx,
+            &mut app,
+            vec![keyboard(egui::Key::ArrowDown, egui::Modifiers::NONE)],
+            crate::ui::topbar::show,
+        );
+        view_frame(
+            &ctx,
+            &mut app,
+            vec![keyboard(egui::Key::Enter, egui::Modifiers::NONE)],
+            crate::ui::topbar::show,
+        );
+        assert!(app.actions.iter().any(
+                |action| matches!(action, Action::PlayUris { uris, .. } if uris == std::slice::from_ref(&track.uri))
+        ));
+        assert!(app.actions.iter().any(|action| {
+            matches!(action, Action::RememberRecentItem(item) if item.uri == track.uri)
+        }));
+        assert_eq!(*app.page(), Page::Home);
+        app.search.results = Loadable::Loading;
+        app.search.catalogue_pending = true;
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::search::show);
+        assert!(!text.iter().any(|(label, _)| label.contains("Loading")));
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn search_cover_click_keeps_results_open_and_dispatches_playback() {
+        let (ctx, mut app) = accessible_app("search-cover-feedback");
+        let track = app
+            .search
+            .results
+            .get()
+            .unwrap()
+            .tracks
+            .as_ref()
+            .unwrap()
+            .items[0]
+            .clone();
+        app.search.query = "dance".into();
+        app.search.committed = "dance".into();
+        app.settings.search_history.clear();
+        app.search.focus_requested = true;
+        for _ in 0..3 {
+            view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        }
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        let title = text
+            .iter()
+            .find(|(label, rect)| label == &track.name && rect.top() > 60.0)
+            .unwrap()
+            .1;
+        let cover = egui::pos2(title.left() - 32.0, title.center().y + 9.0);
+        app.actions.clear();
+        let [click, _] = double_click(cover);
+        view_frame(&ctx, &mut app, click, crate::ui::topbar::show);
+        assert!(
+            app.actions.iter().any(
+                |action| matches!(action, Action::RememberRecentItem(item) if item.uri == track.uri)
+            )
+        );
+        assert!(
+            app.actions
+                .iter()
+                .any(|action| matches!(action, Action::TogglePlay | Action::PlayUris { .. }))
+        );
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        assert!(
+            text.iter()
+                .any(|(label, rect)| label == &track.name && rect.top() > 60.0),
+            "playback must leave the suggestions open for pause and feedback"
+        );
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn confirmed_search_results_stay_visible_until_the_next_query_is_submitted() {
+        let (ctx, mut app) = accessible_app("search-confirmed-page");
+        app.search.query = "first query".into();
+        app.search.committed = "first query".into();
+        app.search.committed_run = Some((0, false));
+        view_frame(&ctx, &mut app, vec![], crate::ui::search::show);
+        let original = app.search.results.get().unwrap().clone();
+        let mut preview = original.clone();
+        preview.tracks.as_mut().unwrap().items[0].name = "Different preview song".into();
+        app.search.query = "second query".into();
+        app.search.committed = "second query".into();
+        app.search.committed_run = Some((1, true));
+        app.search.results = Loadable::Loaded(preview);
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::search::show);
+        assert!(
+            !text
+                .iter()
+                .any(|(label, _)| label == "Different preview song")
+        );
+        app.search.committed_run = Some((1, false));
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::search::show);
+        assert!(
+            text.iter()
+                .any(|(label, _)| label == "Different preview song")
+        );
+        app.backend.shutdown();
+    }
+
+
+    #[test]
+    fn search_popup_grows_when_results_arrive_and_scrolls_past_the_first_matches() {
+        let (ctx, mut app) = accessible_app("search-popup-growth");
+        let mut results = app.search.results.get().unwrap().clone();
+        let template = results.tracks.as_ref().unwrap().items[0].clone();
+        results.tracks.as_mut().unwrap().items = (0..12)
+            .map(|index| {
+                let mut track = template.clone();
+                track.name = format!("Result {index:02}");
+                track.uri = format!("spotify:track:popup-{index}");
+                track
+            })
+            .collect();
+        results.artists = None;
+        results.albums = None;
+        results.playlists = None;
+        app.search.query = "watch".into();
+        app.search.committed = "watch".into();
+        app.search.results = Loadable::Loading;
+        app.search.focus_requested = true;
+        for _ in 0..4 {
+            view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        }
+        let popup = || {
+            ctx.memory(|memory| memory.area_rect(egui::Id::new("search-suggestions-popover"))).unwrap()
+        };
+        assert!(popup().height() < 100.0);
+        app.search.results = Loadable::Loaded(results);
+        for _ in 0..4 {
+            view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        }
+        let bounds = popup();
+        assert!(
+            bounds.height() >= 440.0,
+            "the loaded popup must grow beyond the old one-row height: {bounds:?}"
+        );
+        let text = view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+        let visible = text
+            .iter()
+            .filter(|(label, rect)| label.starts_with("Result ") && bounds.contains(rect.center()))
+            .count();
+        assert!(
+            visible >= 6,
+            "expected several visible matches, found {visible}"
+        );
+        view_frame(
+            &ctx,
+            &mut app,
+            vec![
+                egui::Event::PointerMoved(bounds.center()),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, -900.0),
+                    modifiers: egui::Modifiers::NONE,
+                    phase: egui::TouchPhase::Move,
+                },
+            ],
+            crate::ui::topbar::show,
+        );
+        let mut last_visible = false;
+        for _ in 0..12 {
+            let text = view_frame(&ctx, &mut app, vec![], crate::ui::topbar::show);
+            last_visible |= text
+                .iter()
+                .any(|(label, rect)| label == "Result 11" && popup().contains(rect.center()));
+        }
+        assert!(
+            last_visible,
+            "matches after the first three must remain reachable"
+        );
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn an_undersized_native_restore_recovers_the_last_main_window_size() {
+        let (ctx, mut app) = accessible_app("native-restore-size");
+        app.window_geometry.size = Some([1100.0, 700.0]);
+        let mut input = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(1240.0, 800.0),
+            )),
+            ..Default::default()
+        };
+        let viewport = input.viewports.get_mut(&egui::ViewportId::ROOT).unwrap();
+        viewport.inner_rect = Some(egui::Rect::from_min_size(
+            egui::pos2(100.0, 100.0),
+            egui::vec2(140.0, 80.0),
+        ));
+        viewport.maximized = Some(false);
+        let mut output = ctx.run_ui(input, |ui| app.frame_ui(ui));
+        let commands = &output.viewport_output[&egui::ViewportId::ROOT].commands;
+        assert!(commands.contains(&egui::ViewportCommand::InnerSize(egui::vec2(
+            1100.0, 700.0
+        ))));
+        output.textures_delta.clear();
+        app.backend.shutdown();
+    }
+
+    #[test]
+    fn the_central_scrollbar_stays_fixed_beneath_the_collapsed_overlay() {
+        let (ctx, mut app) = accessible_app("central-scrollbar-overlay");
+        app.show_lyrics_panel = false;
+        app.open(Page::Home);
+        let mut scrollbar_x = None;
+        for (frame, pointer) in [
+            egui::pos2(700.0, 300.0),
+            egui::pos2(700.0, 300.0),
+            egui::pos2(1270.0, 400.0),
+            egui::pos2(1270.0, 400.0),
+            egui::pos2(700.0, 300.0),
+            egui::pos2(700.0, 300.0),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    time: Some(frame as f64 * 0.5),
+                    screen_rect: Some(egui::Rect::from_min_size(
+                        egui::Pos2::ZERO,
+                        egui::vec2(1280.0, 800.0),
+                    )),
+                    events: vec![egui::Event::PointerMoved(pointer)],
+                    ..Default::default()
+                },
+                |ui| app.frame_ui(ui),
+            );
+            let overlay = ctx
+                .data(|data| {
+                    data.get_temp::<egui::Rect>(egui::Id::new("npv-collapsed-strip-last-rect"))
+                })
+                .unwrap();
+            fn collect(shape: &egui::epaint::Shape, bars: &mut Vec<egui::Rect>) {
+                match shape {
+                    egui::epaint::Shape::Rect(rect)
+                        if (rect.rect.width() - 8.0).abs() < 0.1
+                            && rect.rect.height() > 28.0
+                            && rect.rect.left() > 500.0
+                            && rect.fill.a() > 0
+                            && rect.fill != egui::Color32::BLACK =>
+                    {
+                        bars.push(rect.rect)
+                    }
+                    egui::epaint::Shape::Vec(shapes) => {
+                        for shape in shapes {
+                            collect(shape, bars);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            let mut bars = Vec::new();
+            for shape in &output.shapes {
+                collect(&shape.shape, &mut bars);
+            }
+            if frame > 0 {
+                assert!(!bars.is_empty(), "the visible scrollbar must be exercised");
+                let (left, right) = *scrollbar_x.get_or_insert((bars[0].left(), bars[0].right()));
+                assert!(
+                    bars.iter().all(|bar| {
+                        (bar.left() - left).abs() < 0.1 && (bar.right() - right).abs() < 0.1
+                    }),
+                    "the hover must not move the scrollbar: {bars:?}, expected {left}..{right}"
+                );
+                if frame == 3 {
+                    assert!(
+                        bars.iter().all(|bar| overlay.contains_rect(*bar)),
+                        "the expanded hover must cover the stationary scrollbar"
+                    );
+                }
+            }
+            output.textures_delta.clear();
+        }
+        app.backend.shutdown();
+    }
+
 }

@@ -1,0 +1,202 @@
+[
+  {
+    "file": "mod/01-home.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1513815
+  },
+  {
+    "file": "mod/02-liked.png",
+    "mode": "offline demo",
+    "page": "liked",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 889698
+  },
+  {
+    "file": "mod/03-playlist.png",
+    "mode": "offline demo",
+    "page": "playlist:pl1",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 937614
+  },
+  {
+    "file": "mod/04-album.png",
+    "mode": "offline demo",
+    "page": "album:alb0",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 769525
+  },
+  {
+    "file": "mod/05-artist.png",
+    "mode": "offline demo",
+    "page": "artist:art0",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 872562
+  },
+  {
+    "file": "mod/06-search.png",
+    "mode": "offline demo",
+    "page": "search",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 678540
+  },
+  {
+    "file": "mod/07-search-preview.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,search-preview,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1269115
+  },
+  {
+    "file": "mod/08-queue.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,queue,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1323877
+  },
+  {
+    "file": "mod/09-devices.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,devices,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1261198
+  },
+  {
+    "file": "mod/10-listening-activity.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,friend-activity,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1275395
+  },
+  {
+    "file": "mod/11-settings.png",
+    "mode": "offline demo",
+    "page": "settings",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 518451
+  },
+  {
+    "file": "mod/12-create-playlist.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,create,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 964874
+  },
+  {
+    "file": "mod/13-lyrics.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,lyrics,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1422962
+  },
+  {
+    "file": "mod/14-lyrics-expanded.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,lyrics-fullscreen-view",
+    "version": "0.1.0",
+    "bytes": 932276
+  },
+  {
+    "file": "mod/15-library-grid.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,library-grid,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1552028
+  },
+  {
+    "file": "mod/16-podcasts.png",
+    "mode": "offline demo",
+    "page": "podcasts",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 623892
+  },
+  {
+    "file": "mod/17-podcast-show.png",
+    "mode": "offline demo",
+    "page": "show:sh0",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 981479
+  },
+  {
+    "file": "mod/18-shortcuts.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,shortcuts,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 824579
+  },
+  {
+    "file": "mod/19-playing-next.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,playing-next,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1316494
+  },
+  {
+    "file": "mod/20-winamp.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,winamp",
+    "version": "0.1.0",
+    "bytes": 30245
+  },
+  {
+    "file": "mod/21-equalizer.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,winamp,eq,playlist",
+    "version": "0.1.0",
+    "bytes": 104826
+  },
+  {
+    "file": "mod/22-light-theme.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,light,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1400821
+  },
+  {
+    "file": "mod/23-recent-playback.png",
+    "mode": "offline demo",
+    "page": "home",
+    "flags": "dark,recents,home-no-promo",
+    "version": "0.1.0",
+    "bytes": 1246262
+  },
+  {
+    "file": "mod/24-library-albums.png",
+    "mode": "offline demo",
+    "page": "albums",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 849331
+  },
+  {
+    "file": "mod/25-library-artists.png",
+    "mode": "offline demo",
+    "page": "artists",
+    "flags": "dark",
+    "version": "0.1.0",
+    "bytes": 764974
+  }
+]

@@ -3361,3 +3361,448 @@ msgstr ""
 
 #~ msgid "Reduce lyrics motion"
 #~ msgstr "Songtekstbeweging verminderen"
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr "Pas het zoomniveau aan om Spotify af te stemmen op je voorkeuren en behoeften."
+
+
+msgid "All"
+msgstr "Alles"
+
+
+msgid "Alphabetical"
+msgstr "Alfabetisch"
+
+
+msgid "Audiobooks"
+msgstr "Luisterboeken"
+
+
+msgid "Blend"
+msgstr "Blend"
+
+
+msgid "Browse"
+msgstr "Bladeren"
+
+
+msgid "Clear recent searches"
+msgstr "Recente zoekopdrachten wissen"
+
+
+msgid "Collapse Your Library"
+msgstr "Je bibliotheek inklappen"
+
+
+msgid "Compact grid"
+msgstr "Compact raster"
+
+
+msgid "Compact list"
+msgstr "Compacte lijst"
+
+
+msgid "Connect"
+msgstr "Verbinden"
+
+
+msgid "Creator"
+msgstr "Maker"
+
+
+msgid "Default"
+msgstr "Standaard"
+
+
+msgid "Dense"
+msgstr "Compact"
+
+
+msgid "Don't see your device?"
+msgstr "Zie je je apparaat niet?"
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr "Teken de eigen titelbalk en vensterknoppen van Spotify in plaats van die van de desktop."
+
+
+msgid "Enter full screen"
+msgstr "Volledig scherm openen"
+
+
+msgid "Expand Your Library"
+msgstr "Je bibliotheek uitklappen"
+
+
+msgid "Friend Activity"
+msgstr "Activiteit van vrienden"
+
+
+msgid "Go back"
+msgstr "Terug"
+
+
+msgid "Go forward"
+msgstr "Vooruit"
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr "Beheer je luisteractiviteit in de Spotify-app via Instellingen > Luisteractiviteit en inzichten."
+
+
+msgid "Hide"
+msgstr "Verbergen"
+
+
+msgid "Jam"
+msgstr "Jam"
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr "Laat je vrienden en volgers op Spotify zien waar je naar luistert."
+
+
+msgid "Listen now"
+msgstr "Nu luisteren"
+
+
+msgid "Listen together from anywhere"
+msgstr "Luister overal samen"
+
+
+msgid "Listening activity"
+msgstr "Luisteractiviteit"
+
+
+msgid "Lyrics preview"
+msgstr "Songtekstvoorbeeld"
+
+
+msgid "Made for"
+msgstr "Gemaakt voor"
+
+
+msgid "Menu"
+msgstr "Menu"
+
+
+msgid "Mixed playlist"
+msgstr "Gemixte playlist"
+
+
+msgid "More options"
+msgstr "Meer opties"
+
+
+msgid "Music"
+msgstr "Muziek"
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr "Muziek die op deze computer speelt, stopt als Spotify herstart."
+
+
+msgid "Music video"
+msgstr "Muziekvideo"
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr "Nieuwe releases verschijnen hier. Volg je favoriete artiesten en podcasts om op de hoogte te blijven."
+
+
+msgid "No other devices found"
+msgstr "Geen andere apparaten gevonden"
+
+
+msgid "On other networks"
+msgstr "Op andere netwerken"
+
+
+msgid "Open Miniplayer"
+msgstr "Minispeler openen"
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr "Afspelen vereist Spotify Premium. Met een Free-account kun je bladeren en zoeken, maar geen muziek afspelen via Spotify."
+
+
+msgid "Podcasts and shows"
+msgstr "Podcasts en shows"
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr "Populaire nummers en aanbevelingen voor jou."
+
+
+msgid "Popular songs and trending stations"
+msgstr "Populaire nummers en trending stations"
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr "Spotify biedt deze client geen echte activiteit van vrienden aan."
+
+
+msgid "Related music videos"
+msgstr "Gerelateerde muziekvideo's"
+
+
+msgid "Reset"
+msgstr "Opnieuw instellen"
+
+
+msgid "Saved & downloaded"
+msgstr "Opgeslagen en gedownload"
+
+
+msgid "Show all"
+msgstr "Alles weergeven"
+
+
+msgid "Show more"
+msgstr "Meer weergeven"
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr "Log in via je browser. Spotify ziet je wachtwoord nooit. Lokaal afspelen vereist Spotify Premium."
+
+
+msgid "Song"
+msgstr "Nummer"
+
+
+msgid "Spacious"
+msgstr "Ruim"
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr "Spotify verdwijnt naar het systeemvak. Sluit af via het menu in het systeemvak of met Cmd+Q."
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr "Spotify verdwijnt naar het systeemvak. Sluit af via het menu in het systeemvak of met Ctrl+Q."
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr "De standaardverbinding van Spotify deelt de verzoeklimiet van Spotify met andere luisteraars. Als het druk is, kan het laden van muziek en het gebruik van de afspeelknoppen langer duren."
+
+
+msgid "Standard grid"
+msgstr "Standaardraster"
+
+
+msgid "Standard list"
+msgstr "Standaardlijst"
+
+
+msgid "Start a Jam"
+msgstr "Een Jam starten"
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr "De nieuwste releases van artiesten, podcasts en shows die je volgt."
+
+
+msgid "There are no new releases for you right now."
+msgstr "Er zijn momenteel geen nieuwe releases voor jou."
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr "Spotify biedt deze functies niet aan deze client aan."
+
+
+msgid "This computer"
+msgstr "Deze computer"
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr "Het volume van dit apparaat kan niet vanuit Spotify worden gewijzigd"
+
+
+msgid "What's New"
+msgstr "Nieuw"
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr "Je kunt de zoom ook wijzigen met Cmd+- of Cmd++."
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr "Je kunt de zoom ook wijzigen met Ctrl+- of Ctrl++."
+
+
+msgid "Your Episodes"
+msgstr "Je afleveringen"
+
+
+msgid "Your Library"
+msgstr "Je bibliotheek"
+
+
+msgid "Zoom level"
+msgstr "Zoomniveau"
+
+
+msgid "Bass Booster"
+msgstr "Basversterking"
+
+
+msgid "Bass Reducer"
+msgstr "Basvermindering"
+
+
+msgid "Classical"
+msgstr "Klassiek"
+
+
+msgid "Club"
+msgstr "Club"
+
+
+msgid "Custom"
+msgstr "Aangepast"
+
+
+msgid "Dance"
+msgstr "Dance"
+
+
+msgid "Flat"
+msgstr "Vlak"
+
+
+msgid "Full Bass"
+msgstr "Volle bas"
+
+
+msgid "Full Bass & Treble"
+msgstr "Volle bas en hoge tonen"
+
+
+msgid "Full Treble"
+msgstr "Volle hoge tonen"
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr "Laptopspeakers / Koptelefoon"
+
+
+msgid "Large Hall"
+msgstr "Grote zaal"
+
+
+msgid "Live"
+msgstr "Live"
+
+
+msgid "Loudness"
+msgstr "Luidheid"
+
+
+msgid "Night Listening"
+msgstr "Nachtluisteren"
+
+
+msgid "Party"
+msgstr "Feest"
+
+
+msgid "Pop"
+msgstr "Pop"
+
+
+msgid "Recents"
+msgstr "Recent"
+
+
+msgid "Reggae"
+msgstr "Reggae"
+
+
+msgid "Rock"
+msgstr "Rock"
+
+
+msgid "Ska"
+msgstr "Ska"
+
+
+msgid "Small Speakers"
+msgstr "Kleine speakers"
+
+
+msgid "Soft"
+msgstr "Zacht"
+
+
+msgid "Soft Rock"
+msgstr "Softrock"
+
+
+msgid "Sort by"
+msgstr "Sorteren op"
+
+
+msgid "Spoken Word"
+msgstr "Gesproken woord"
+
+
+msgid "Techno"
+msgstr "Techno"
+
+
+msgid "Treble Booster"
+msgstr "Versterking hoge tonen"
+
+
+msgid "View as"
+msgstr "Weergeven als"
+
+
+msgid "Vocal Booster"
+msgstr "Stemversterking"
+
+
+msgid "Show Now Playing view"
+msgstr "Weergave Nu afspelen tonen"
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr "Breng de muzieksmaak van je vrienden samen in één playlist"
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr "Maak een playlist met nummers of afleveringen"
+
+
+msgid "Mix songs with smooth transitions"
+msgstr "Mix nummers met vloeiende overgangen"
+
+
+msgid "Organize your playlists"
+msgstr "Orden je playlists"
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr "Over de artiest"
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr "Credits"
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr "Hierna"
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr "Wachtrij openen"
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr "Credits bekijken"

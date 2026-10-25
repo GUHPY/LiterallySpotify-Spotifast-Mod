@@ -12,7 +12,7 @@ use crate::model::{Action, Dialog, DragEntry, DragTrack, Page, RowContext, RowPi
 use crate::theme::{self, Icon, Palette};
 use crate::util;
 
-pub const CARD_WIDTH: f32 = 172.0;
+pub const CARD_WIDTH: f32 = 196.0;
 /// The cover inside a card, within its 12 point padding.
 pub const CARD_ART: f32 = CARD_WIDTH - 24.0;
 pub const CARD_GAP: f32 = 14.0;
@@ -312,7 +312,7 @@ fn paint_cover_texture(
 
 /// A soft drop shadow under a cover or card.
 pub fn paint_shadow(ui: &Ui, palette: &Palette, rect: Rect, radius: f32) {
-    if !palette.dark {
+    if !palette.dark || palette.shadow.a() == 0 || palette.is_oled() {
         return;
     }
     let shadow = egui::epaint::Shadow {
@@ -325,7 +325,6 @@ pub fn paint_shadow(ui: &Ui, palette: &Palette, rect: Rect, radius: f32) {
         .add(shadow.as_shape(rect, CornerRadius::same(radius as u8)));
 }
 
-/// Fills `rect` with a vertical gradient from `top` to `bottom`.
 pub fn paint_vertical_gradient(ui: &Ui, rect: Rect, top: Color32, bottom: Color32) {
     let mut mesh = egui::Mesh::default();
     mesh.colored_vertex(rect.left_top(), top);
@@ -334,6 +333,44 @@ pub fn paint_vertical_gradient(ui: &Ui, rect: Rect, top: Color32, bottom: Color3
     mesh.colored_vertex(rect.left_bottom(), bottom);
     mesh.add_triangle(0, 1, 2);
     mesh.add_triangle(0, 2, 3);
+    ui.painter().add(egui::Shape::mesh(mesh));
+}
+
+pub fn paint_horizontal_gradient(ui: &Ui, rect: Rect, left: Color32, right: Color32) {
+    let mut mesh = egui::Mesh::default();
+    mesh.colored_vertex(rect.left_top(), left);
+    mesh.colored_vertex(rect.right_top(), right);
+    mesh.colored_vertex(rect.right_bottom(), right);
+    mesh.colored_vertex(rect.left_bottom(), left);
+    mesh.add_triangle(0, 1, 2);
+    mesh.add_triangle(0, 2, 3);
+    ui.painter().add(egui::Shape::mesh(mesh));
+}
+
+/// Fills `rect` with a vertical gradient from `top` to `bottom`, respecting rounded corners.
+pub fn paint_vertical_gradient_rounded(
+    ui: &Ui,
+    rect: Rect,
+    corner_radius: CornerRadius,
+    top: Color32,
+    bottom: Color32,
+) {
+    let mut tess = egui::epaint::tessellator::Tessellator::new(
+        ui.ctx().pixels_per_point(),
+        egui::epaint::TessellationOptions::default(),
+        [0, 0],
+        vec![],
+    );
+    let mut mesh = egui::Mesh::default();
+    tess.tessellate_shape(
+        egui::Shape::rect_filled(rect, corner_radius, Color32::WHITE),
+        &mut mesh,
+    );
+    let h = rect.height().max(1.0);
+    for v in &mut mesh.vertices {
+        let t = ((v.pos.y - rect.top()) / h).clamp(0.0, 1.0);
+        v.color = theme::blend(top, bottom, t);
+    }
     ui.painter().add(egui::Shape::mesh(mesh));
 }
 
@@ -1108,6 +1145,17 @@ pub fn item_menu(
                 app.actions.push(Action::Open(Page::Show(show.id.clone())));
             }
         }
+    }
+    if let PlayableItem::Track(track) = item
+        && menu_item(
+            ui,
+            &palette,
+            Some(Icon::ListMusic),
+            &gettext(locale, "View credits"),
+        )
+    {
+        app.actions
+            .push(Action::ShowDialog(Dialog::Credits(Box::new(track.clone()))));
     }
     menu_separator(ui, &palette);
     if menu_item(
@@ -2509,14 +2557,20 @@ pub fn card(
     }
     let mut play = false;
     if ui.is_rect_visible(rect) {
+        let anim_id = response.id.with("card-hover-anim");
         let hovered = ui.rect_contains_pointer(rect);
-        if hovered {
+        let hover_t = ui.ctx().animate_bool_with_time_and_easing(
+            anim_id,
+            hovered || playing,
+            0.18,
+            egui::emath::easing::cubic_out,
+        );
+        if hover_t > 0.005 {
+            let mult = if palette.dark { 0.8 } else { 1.0 } * hover_t;
             ui.painter().rect_filled(
                 rect,
                 CornerRadius::same(theme::RADIUS),
-                palette
-                    .surface_hover
-                    .gamma_multiply(if palette.dark { 0.8 } else { 1.0 }),
+                palette.surface_hover.gamma_multiply(mult),
             );
         }
         let image_rect = Rect::from_min_size(rect.min + vec2(PAD, PAD), Vec2::splat(image_size));
@@ -2532,40 +2586,64 @@ pub fn card(
             Some(app.backend.art()),
         );
         let text_left = rect.left() + PAD;
-        let title_galley = ellipsized(ui, title, title_font, palette.text, text_width, 1);
-        let title_rect = Rect::from_min_size(
-            pos2(text_left, image_rect.bottom() + TITLE_GAP),
-            vec2(text_width, title_row),
-        );
-        let title_pos = match title_galley.job.halign {
-            Align::RIGHT => pos2(title_rect.right(), title_rect.top()),
-            Align::Center => pos2(title_rect.center().x, title_rect.top()),
-            _ => title_rect.min,
-        };
-        ui.painter().galley(title_pos, title_galley, palette.text);
-        let subtitle_galley = ellipsized(
-            ui,
-            subtitle,
-            subtitle_font,
-            palette.secondary,
-            text_width,
-            2,
-        );
-        let subtitle_rect = Rect::from_min_size(
-            pos2(text_left, title_rect.bottom() + SUBTITLE_GAP),
-            vec2(text_width, 2.0 * subtitle_row),
-        );
-        let subtitle_pos = match subtitle_galley.job.halign {
-            Align::RIGHT => pos2(subtitle_rect.right(), subtitle_rect.top()),
-            Align::Center => pos2(subtitle_rect.center().x, subtitle_rect.top()),
-            _ => subtitle_rect.min,
-        };
-        ui.painter()
-            .galley(subtitle_pos, subtitle_galley, palette.secondary);
+        if title.is_empty() {
+            let subtitle_galley = ellipsized(
+                ui,
+                subtitle,
+                subtitle_font,
+                palette.secondary,
+                text_width,
+                2,
+            );
+            let subtitle_rect = Rect::from_min_size(
+                pos2(text_left, image_rect.bottom() + TITLE_GAP),
+                vec2(text_width, 2.0 * subtitle_row),
+            );
+            let subtitle_pos = match subtitle_galley.job.halign {
+                Align::RIGHT => pos2(subtitle_rect.right(), subtitle_rect.top()),
+                Align::Center => pos2(subtitle_rect.center().x, subtitle_rect.top()),
+                _ => subtitle_rect.min,
+            };
+            ui.painter()
+                .galley(subtitle_pos, subtitle_galley, palette.secondary);
+        } else {
+            let title_galley = ellipsized(ui, title, title_font, palette.text, text_width, 1);
+            let title_rect = Rect::from_min_size(
+                pos2(text_left, image_rect.bottom() + TITLE_GAP),
+                vec2(text_width, title_row),
+            );
+            let title_pos = match title_galley.job.halign {
+                Align::RIGHT => pos2(title_rect.right(), title_rect.top()),
+                Align::Center => pos2(title_rect.center().x, title_rect.top()),
+                _ => title_rect.min,
+            };
+            ui.painter().galley(title_pos, title_galley, palette.text);
+            let subtitle_galley = ellipsized(
+                ui,
+                subtitle,
+                subtitle_font,
+                palette.secondary,
+                text_width,
+                2,
+            );
+            let subtitle_rect = Rect::from_min_size(
+                pos2(text_left, title_rect.bottom() + SUBTITLE_GAP),
+                vec2(text_width, 2.0 * subtitle_row),
+            );
+            let subtitle_pos = match subtitle_galley.job.halign {
+                Align::RIGHT => pos2(subtitle_rect.right(), subtitle_rect.top()),
+                Align::Center => pos2(subtitle_rect.center().x, subtitle_rect.top()),
+                _ => subtitle_rect.min,
+            };
+            ui.painter()
+                .galley(subtitle_pos, subtitle_galley, palette.secondary);
+        }
 
-        if playable && hovered {
+        if playable && (hover_t > 0.01 || playing) {
+            let slide_y = (1.0 - hover_t) * 10.0;
+            let button_center = pos2(image_rect.right() - 26.0, image_rect.bottom() - 26.0 + slide_y);
             let button_rect = Rect::from_center_size(
-                pos2(image_rect.right() - 26.0, image_rect.bottom() - 26.0),
+                button_center,
                 Vec2::splat(44.0),
             );
             let mut child = ui.new_child(
@@ -2573,6 +2651,7 @@ pub fn card(
                     .max_rect(button_rect)
                     .layout(Layout::centered_and_justified(egui::Direction::LeftToRight)),
             );
+            child.set_opacity(hover_t);
             play = theme::circle_button(
                 &mut child,
                 if playing {
@@ -2602,24 +2681,256 @@ pub fn card(
 pub fn shelf(
     ui: &mut Ui,
     palette: &Palette,
+    locale: Locale,
     id: &str,
     title: &str,
     add_contents: impl FnOnce(&mut Ui),
 ) {
-    ui.add_space(8.0);
-    theme::section_title(ui, palette, title);
+    shelf_with_overtitle(ui, palette, Some(locale), id, None, title, add_contents);
+}
+
+/// A horizontal shelf of cards with an optional subdued overtitle and right-aligned "Mostrar tudo".
+pub fn shelf_with_overtitle(
+    ui: &mut Ui,
+    palette: &Palette,
+    locale: Option<Locale>,
+    id: &str,
+    overtitle: Option<&str>,
+    title: &str,
+    add_contents: impl FnOnce(&mut Ui),
+) {
+    ui.add_space(10.0);
+    if let Some(over) = overtitle {
+        theme::text(ui, over, theme::regular(12.0), palette.secondary);
+        ui.add_space(1.0);
+    }
+    ui.horizontal(|ui| {
+        theme::section_title(ui, palette, title);
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            let show_all = locale
+                .map(|loc| gettext(loc, "Show all"))
+                .unwrap_or_else(|| std::borrow::Cow::Borrowed("Show all"));
+            let _ = theme::link(
+                ui,
+                show_all.as_ref(),
+                theme::semibold(13.0),
+                palette.secondary,
+            );
+        });
+    });
     ui.add_space(4.0);
-    crate::autoscroll::show(
-        ui,
-        egui::ScrollArea::horizontal().id_salt(id),
-        egui::Vec2b::new(true, false),
-        |ui| {
-            ui.horizontal(|ui| {
-                ui.spacing_mut().item_spacing.x = CARD_GAP / 2.0;
-                add_contents(ui);
-            });
-        },
+
+    let anim_id = ui.id().with((id, "shelf_scroll_anim"));
+    let anim_data: Option<(std::time::Instant, f32, f32)> = ui.ctx().data(|d| d.get_temp(anim_id));
+    let mut forced_scroll_x = None;
+    if let Some((start, from_x, to_x)) = anim_data {
+        let elapsed = start.elapsed().as_secs_f32();
+        let dur = 0.28;
+        if elapsed < dur {
+            let t = (elapsed / dur).min(1.0);
+            let eased = egui::emath::easing::cubic_out(t);
+            forced_scroll_x = Some(from_x + (to_x - from_x) * eased);
+            ui.ctx()
+                .request_repaint_after(std::time::Duration::from_millis(16));
+        } else {
+            forced_scroll_x = Some(to_x);
+            ui.ctx()
+                .data_mut(|d| d.remove::<(std::time::Instant, f32, f32)>(anim_id));
+        }
+    }
+
+    let viewport = ui.clip_rect();
+    let content_left = ui.cursor().left();
+    let inset = (content_left - viewport.left() - 12.0).max(0.0).round() as i8;
+    let mut row_ui = ui.new_child(
+        UiBuilder::new()
+            .id_salt((id, "shelf-viewport"))
+            .max_rect(Rect::from_min_max(
+                pos2(viewport.left(), ui.cursor().top()),
+                pos2(viewport.right(), ui.max_rect().bottom()),
+            ))
+            .layout(Layout::top_down(Align::Min)),
     );
+    let mut area = egui::ScrollArea::horizontal()
+        .id_salt(id)
+        .content_margin(egui::Margin::symmetric(inset, 0))
+        .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysHidden);
+    if let Some(x) = forced_scroll_x {
+        area = area.horizontal_scroll_offset(x);
+    }
+
+    let output = crate::autoscroll::show(&mut row_ui, area, egui::Vec2b::new(true, false), |ui| {
+        ui.horizontal(|ui| {
+            ui.spacing_mut().item_spacing.x = 0.0;
+            add_contents(ui);
+        })
+        .response
+        .rect
+    });
+    ui.advance_cursor_after_rect(Rect::from_min_max(
+        pos2(content_left, output.inner_rect.top()),
+        pos2(ui.max_rect().right(), output.inner.bottom()),
+    ));
+
+    // The scroll viewport can include the rest of the page; only this row owns its hover.
+    let rect = output.inner.intersect(output.inner_rect);
+    let content_w = output.content_size.x;
+    let visible_w = rect.width();
+    let current_x = output.state.offset.x;
+    let max_x = (content_w - visible_w).max(0.0);
+
+    if max_x > 8.0 {
+        let is_shelf_hovered = ui.rect_contains_pointer(rect);
+        let hover_id = ui.id().with((id, "shelf_hover_t"));
+        let hover_t = ui.ctx().animate_bool_with_time_and_easing(
+            hover_id,
+            is_shelf_hovered,
+            0.20,
+            egui::emath::easing::cubic_out,
+        );
+
+        let can_scroll_left = current_x > 5.0;
+        let can_scroll_right = current_x < max_x - 5.0;
+
+        // Subtle gradient masks on the edges:
+        if can_scroll_right {
+            let shadow_w = 40.0;
+            let shadow_rect = Rect::from_min_size(
+                pos2(rect.right() - shadow_w, rect.top()),
+                vec2(shadow_w, rect.height()),
+            );
+            paint_horizontal_gradient(
+                ui,
+                shadow_rect,
+                Color32::TRANSPARENT,
+                palette.panel.gamma_multiply(0.45),
+            );
+        }
+        if can_scroll_left {
+            let shadow_w = 32.0;
+            let shadow_rect = Rect::from_min_size(rect.min, vec2(shadow_w, rect.height()));
+            paint_horizontal_gradient(
+                ui,
+                shadow_rect,
+                palette.panel.gamma_multiply(0.45),
+                Color32::TRANSPARENT,
+            );
+        }
+
+        // Circular navigation buttons ("bolinha preta com uma setinha"):
+        if hover_t > 0.01 {
+            let btn_diam = 34.0f32;
+            let btn_radius = btn_diam / 2.0;
+            let cy = rect.top() + 12.0 + CARD_ART / 2.0;
+
+            // Right button
+            if can_scroll_right {
+                let btn_center = pos2(rect.right() - btn_radius - 8.0, cy);
+                let btn_rect = Rect::from_center_size(btn_center, Vec2::splat(btn_diam));
+                let btn_resp = ui.interact(
+                    btn_rect,
+                    ui.id().with((id, "shelf_right_btn")),
+                    Sense::click(),
+                );
+                if btn_resp.hovered() {
+                    ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                }
+
+                // Shadow
+                ui.painter().circle_filled(
+                    btn_center + vec2(0.0, 2.0),
+                    btn_radius,
+                    Color32::from_black_alpha((90.0 * hover_t) as u8),
+                );
+
+                // Background
+                let bg_color = if btn_resp.hovered() {
+                    Color32::from_rgb(42, 42, 42)
+                } else {
+                    Color32::from_black_alpha(230)
+                };
+                ui.painter().circle_filled(
+                    btn_center,
+                    btn_radius,
+                    bg_color.gamma_multiply(hover_t),
+                );
+                ui.painter().circle_stroke(
+                    btn_center,
+                    btn_radius,
+                    Stroke::new(1.0, Color32::from_white_alpha((40.0 * hover_t) as u8)),
+                );
+
+                // Chevron Right Icon
+                let icon_color = Color32::WHITE.gamma_multiply(hover_t);
+                let icon_rect = Rect::from_center_size(btn_center, Vec2::splat(18.0));
+                theme::paint_icon(ui, Icon::ChevronRight, icon_rect, 18.0, icon_color);
+
+                if btn_resp.clicked() {
+                    let step = (visible_w * 0.75).max(180.0);
+                    let target_x = (current_x + step).min(max_x);
+                    ui.ctx().data_mut(|d| {
+                        d.insert_temp(anim_id, (std::time::Instant::now(), current_x, target_x));
+                    });
+                    ui.ctx()
+                        .request_repaint_after(std::time::Duration::from_millis(16));
+                }
+            }
+
+            // Left button
+            if can_scroll_left {
+                let btn_center = pos2(rect.left() + btn_radius + 8.0, cy);
+                let btn_rect = Rect::from_center_size(btn_center, Vec2::splat(btn_diam));
+                let btn_resp = ui.interact(
+                    btn_rect,
+                    ui.id().with((id, "shelf_left_btn")),
+                    Sense::click(),
+                );
+                if btn_resp.hovered() {
+                    ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
+                }
+
+                // Shadow
+                ui.painter().circle_filled(
+                    btn_center + vec2(0.0, 2.0),
+                    btn_radius,
+                    Color32::from_black_alpha((90.0 * hover_t) as u8),
+                );
+
+                // Background
+                let bg_color = if btn_resp.hovered() {
+                    Color32::from_rgb(42, 42, 42)
+                } else {
+                    Color32::from_black_alpha(230)
+                };
+                ui.painter().circle_filled(
+                    btn_center,
+                    btn_radius,
+                    bg_color.gamma_multiply(hover_t),
+                );
+                ui.painter().circle_stroke(
+                    btn_center,
+                    btn_radius,
+                    Stroke::new(1.0, Color32::from_white_alpha((40.0 * hover_t) as u8)),
+                );
+
+                // Chevron Left Icon
+                let icon_color = Color32::WHITE.gamma_multiply(hover_t);
+                let icon_rect = Rect::from_center_size(btn_center, Vec2::splat(18.0));
+                theme::paint_icon(ui, Icon::ChevronLeft, icon_rect, 18.0, icon_color);
+
+                if btn_resp.clicked() {
+                    let step = (visible_w * 0.75).max(180.0);
+                    let target_x = (current_x - step).max(0.0);
+                    ui.ctx().data_mut(|d| {
+                        d.insert_temp(anim_id, (std::time::Instant::now(), current_x, target_x));
+                    });
+                    ui.ctx()
+                        .request_repaint_after(std::time::Duration::from_millis(16));
+                }
+            }
+        }
+    }
+
     ui.add_space(12.0);
 }
 
@@ -4406,4 +4717,155 @@ mod tests {
         assert_eq!(meta.options, crate::images::COVER_TEXTURE);
         assert_eq!(meta.options.mipmap_mode, Some(egui::TextureFilter::Linear));
     }
+}
+
+#[cfg(test)]
+mod shelf_hover_tests {
+    use super::*;
+
+    #[test]
+    fn navigation_arrows_only_appear_on_the_hovered_row() {
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx);
+        let palette = Palette::dark();
+        for (pointer, expected_row) in [
+            (pos2(180.0, 100.0), Some(0)),
+            (pos2(180.0, 320.0), Some(1)),
+            (pos2(180.0, 620.0), None),
+        ] {
+            let mut arrows = Vec::new();
+            let mut rows = Vec::new();
+            for frame in 0..3 {
+                rows.clear();
+                let mut output = ctx.run_ui(
+                    egui::RawInput {
+                        screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, vec2(500.0, 700.0))),
+                        time: Some(expected_row.unwrap_or(2) as f64 * 10.0 + frame as f64),
+                        events: vec![egui::Event::PointerMoved(pointer)],
+                        ..Default::default()
+                    },
+                    |ui| {
+                        for id in ["first-row", "second-row"] {
+                            shelf(ui, &palette, Locale::English, id, id, |ui| {
+                                let (_, rect) = ui.allocate_space(vec2(1200.0, 180.0));
+                                rows.push(rect);
+                            });
+                        }
+                    },
+                );
+                fn collect(shape: &egui::epaint::Shape, arrows: &mut Vec<egui::Pos2>) {
+                    match shape {
+                        egui::epaint::Shape::Circle(circle)
+                            if circle.radius == 17.0
+                                && circle.fill == Color32::from_black_alpha(230) =>
+                        {
+                            arrows.push(circle.center)
+                        }
+                        egui::epaint::Shape::Vec(shapes) => {
+                            for shape in shapes {
+                                collect(shape, arrows);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                arrows.clear();
+                for shape in &output.shapes {
+                    collect(&shape.shape, &mut arrows);
+                }
+                output.textures_delta.clear();
+            }
+            assert_eq!(
+                arrows.len(),
+                usize::from(expected_row.is_some()),
+                "{pointer:?}: {arrows:?}, rows={rows:?}"
+            );
+            if let Some(row) = expected_row {
+                assert_eq!(usize::from(arrows[0].y > 250.0), row, "{arrows:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn shelves_clip_at_the_panel_edges_instead_of_the_text_insets() {
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx);
+        let palette = Palette::dark();
+        let mut saw_left_overflow = false;
+        for frame in 0..8 {
+            let events = if frame == 3 {
+                vec![
+                    egui::Event::PointerMoved(pos2(200.0, 140.0)),
+                    egui::Event::MouseWheel {
+                        unit: egui::MouseWheelUnit::Point,
+                        delta: vec2(-200.0, 0.0),
+                        modifiers: egui::Modifiers::NONE,
+                        phase: egui::TouchPhase::Move,
+                    },
+                ]
+            } else {
+                vec![]
+            };
+            let mut output = ctx.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, vec2(600.0, 500.0))),
+                    time: Some(frame as f64 * 0.2),
+                    events,
+                    ..Default::default()
+                },
+                |ui| {
+                    ui.set_clip_rect(Rect::from_min_size(egui::Pos2::ZERO, vec2(600.0, 500.0)));
+                    Frame::new()
+                        .inner_margin(egui::Margin::symmetric(40, 0))
+                        .show(ui, |ui| {
+                            shelf(
+                                ui,
+                                &palette,
+                                Locale::English,
+                                "edge-clip-row",
+                                "Row",
+                                |ui| {
+                                    for _ in 0..8 {
+                                        let (rect, _) =
+                                            ui.allocate_exact_size(vec2(196.0, 220.0), Sense::hover());
+                                        ui.painter()
+                                            .rect_filled(rect.shrink(12.0), 0.0, Color32::RED);
+                                    }
+                                },
+                            );
+                        });
+                },
+            );
+            let cards: Vec<_> = output
+                .shapes
+                .iter()
+                .filter_map(|shape| match &shape.shape {
+                    egui::epaint::Shape::Rect(rect) if rect.fill == Color32::RED => {
+                        Some((rect.rect, shape.clip_rect))
+                    }
+                    _ => None,
+                })
+                .collect();
+            assert!(!cards.is_empty());
+            for (rect, clip) in cards {
+                assert_eq!(
+                    clip.left(),
+                    0.0,
+                    "the left text margin must not clip the shelf"
+                );
+                assert_eq!(
+                    clip.right(),
+                    600.0,
+                    "the right text margin must not clip the shelf"
+                );
+                saw_left_overflow |= rect.left() < 0.0 && rect.right() > 0.0;
+            }
+            output.textures_delta.clear();
+        }
+        assert!(
+            saw_left_overflow,
+            "scrolling must reveal partial cards at the left panel edge"
+        );
+    }
+
 }

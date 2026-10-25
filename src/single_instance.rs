@@ -206,13 +206,13 @@ fn claim(
         Some(uri) => format!("open-link {uri}"),
         None => "show".to_owned(),
     };
-    let handler = handler(
+    let handle = handler(
         std::sync::Arc::clone(&guard.commands),
         std::sync::Arc::clone(&guard.now_playing),
         std::sync::Arc::clone(&guard.devices),
         waker.clone(),
     );
-    match slot.claim(&request, handler) {
+    match slot.claim(&request, handle) {
         fastframe_instance::Claim::First(slot) => {
             guard._slot = Some(slot);
             Outcome::Only(guard)
@@ -224,8 +224,25 @@ fn claim(
         }
         fastframe_instance::Claim::Unanswered => {
             log::warn!(
-                "Spotifast is already running but did not answer; not starting a second copy"
+                "Spotifast was unanswered; clearing stale instance files and retrying claim"
             );
+            #[cfg(windows)]
+            {
+                let inst_dir = crate::paths::AppDirs::discover().state.join("instance");
+                let _ = std::fs::remove_file(inst_dir.join("instance.key"));
+                let _ = std::fs::remove_file(inst_dir.join("instance.key.partial"));
+                let _ = std::fs::remove_file(inst_dir.join("instance.lock"));
+                let retry_handle = handler(
+                    std::sync::Arc::clone(&guard.commands),
+                    std::sync::Arc::clone(&guard.now_playing),
+                    std::sync::Arc::clone(&guard.devices),
+                    waker.clone(),
+                );
+                if let fastframe_instance::Claim::First(slot) = slot.claim(&request, retry_handle) {
+                    guard._slot = Some(slot);
+                    return Outcome::Only(guard);
+                }
+            }
             Outcome::Surfaced
         }
     }

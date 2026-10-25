@@ -5,7 +5,7 @@ use fastframe_shell::window::Geometry;
 
 /// A fast, native Spotify client.
 #[derive(Debug, Parser)]
-#[command(name = env!("CARGO_BIN_NAME"), version, about)]
+#[command(name = "literallyspotify", version, about)]
 struct Cli {
     /// A command for the running instance; without one, the app starts.
     #[command(subcommand)]
@@ -584,13 +584,14 @@ pub(crate) fn run() -> eframe::Result<()> {
         #[cfg(feature = "demo")]
         let creator_shot = shot.clone();
         let mini = lease.peek(MiniWindow::wanted);
+        let is_mini = mini.is_some();
         let geometry = lease.peek(main_geometry);
         #[cfg(windows)]
         let locale = lease.peek(|app| app.locale);
         #[cfg(feature = "demo")]
         let options = {
             let options = native_options(
-                shot.is_some() && mini.is_none() && demo_inner.is_none(),
+                shot.is_some() && !is_mini && demo_inner.is_none(),
                 mini,
                 demo_inner,
                 geometry,
@@ -605,11 +606,13 @@ pub(crate) fn run() -> eframe::Result<()> {
         let options = native_options(false, mini, None, geometry);
         let options = profile_options(options);
         #[cfg(windows)]
+        let should_maximize = geometry.maximized && !is_mini;
+        #[cfg(windows)]
         let thumbbar_enabled = desktop_surfaces && options.viewport.taskbar != Some(false);
         #[cfg(target_os = "linux")]
         let hide_from_taskbar = options.viewport.taskbar == Some(false);
         eframe::run_native(
-            "Spotifast",
+            "Spotify",
             options,
             Box::new(move |cc| {
                 if let Some(gl) = &cc.gl {
@@ -670,15 +673,16 @@ pub(crate) fn run() -> eframe::Result<()> {
                         && let RawWindowHandle::Win32(window) = handle.as_raw()
                     {
                         let wake = creator_waker.clone();
-                        // The shell and toolbar share this window's thread
-                        // and lifetime; the toolbar is detached on shell
-                        // drop.
                         unsafe { toolbar.attach(window.hwnd.get(), move || wake.wake()) };
                     }
                     toolbar
                 };
                 Ok(Box::new(Shell {
                     app,
+                    #[cfg(windows)]
+                    frames_rendered: 0,
+                    #[cfg(windows)]
+                    should_maximize,
                     recovery_checked: false,
                     #[cfg(windows)]
                     thumbbar,
@@ -715,6 +719,7 @@ struct MiniWindow {
     geometry: Geometry,
     on_top: bool,
     taskbar: bool,
+    #[allow(dead_code)]
     storage_path: std::path::PathBuf,
 }
 
@@ -788,6 +793,55 @@ fn parse_demo_drag(spec: &str) -> Result<[egui::Pos2; 2], String> {
     Ok([point(from)?, point(to)?])
 }
 
+#[cfg(windows)]
+fn configure_win32_window(window: &impl raw_window_handle::HasWindowHandle) {
+    use raw_window_handle::RawWindowHandle;
+    use windows_sys::Win32::Foundation::HWND;
+    use windows_sys::Win32::Graphics::Gdi::{GetStockObject, BLACK_BRUSH};
+    use windows_sys::Win32::UI::WindowsAndMessaging::{SetClassLongPtrW, GCLP_HBRBACKGROUND};
+    use windows_sys::Win32::Graphics::Dwm::{
+        DwmSetWindowAttribute, DWMWA_BORDER_COLOR, DWMWA_CAPTION_COLOR,
+        DWMWA_USE_IMMERSIVE_DARK_MODE,
+    };
+
+    let Ok(handle) = window.window_handle() else { return; };
+    let RawWindowHandle::Win32(win32_handle) = handle.as_raw() else { return; };
+    let hwnd = win32_handle.hwnd.get() as HWND;
+
+    unsafe {
+        let black_brush = GetStockObject(BLACK_BRUSH);
+        let _ = SetClassLongPtrW(hwnd, GCLP_HBRBACKGROUND, black_brush as isize);
+
+        let dark: i32 = 1;
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_USE_IMMERSIVE_DARK_MODE as u32,
+            &dark as *const _ as *const std::ffi::c_void,
+            std::mem::size_of::<i32>() as u32,
+        );
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            19,
+            &dark as *const _ as *const std::ffi::c_void,
+            std::mem::size_of::<i32>() as u32,
+        );
+
+        let black: u32 = 0x00000000;
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_CAPTION_COLOR as u32,
+            &black as *const _ as *const std::ffi::c_void,
+            4,
+        );
+        let _ = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_BORDER_COLOR as u32,
+            &black as *const _ as *const std::ffi::c_void,
+            4,
+        );
+    }
+}
+
 /// The window to open: the mini player when `mini` says so, else the main
 /// window, at the demo's fixed `inner_size` or where `geometry` remembers.
 fn native_options(
@@ -811,7 +865,7 @@ fn native_options(
     #[cfg(target_os = "linux")]
     let app_id = desktop_entry();
     #[cfg(not(target_os = "linux"))]
-    let app_id = "spotifast";
+    let app_id = "Spotify";
     let icon = if cfg!(target_os = "macos") {
         // macOS takes the dock icon from the bundle's .icns, which is the
         // 1024px drawing with the platform's rounding. Setting a window
@@ -821,7 +875,7 @@ fn native_options(
         app_icon()
     };
     let viewport = egui::ViewportBuilder::default()
-        .with_title("Spotifast")
+        .with_title("Spotify")
         .with_app_id(app_id)
         .with_taskbar(true)
         .with_icon(icon);
@@ -871,10 +925,24 @@ fn native_options(
             if inner_size.is_some() {
                 viewport.with_max_inner_size(size)
             } else {
-                // The size, position and maximized state it was left in,
-                // before the window exists. eframe's own saved window, where
-                // there is one, still wins over this.
-                geometry.apply(viewport)
+                #[cfg(all(windows, not(test)))]
+                {
+                    // Set size and position, but explicitly avoid maximized during initial window creation.
+                    // On Windows winit, setting maximized in ViewportBuilder calls ShowWindow(SW_MAXIMIZE)
+                    // during window construction before frames are ready, causing a white flash.
+                    let mut builder = viewport
+                        .with_inner_size(geometry.size.unwrap_or(size));
+                    if let Some(position) = geometry.position {
+                        builder = builder.with_position(position);
+                    }
+                    builder
+                        .with_visible(false)
+                        .with_maximized(false)
+                }
+                #[cfg(any(not(windows), test))]
+                {
+                    geometry.apply(viewport)
+                }
             }
         }
     };
@@ -970,7 +1038,7 @@ mod native_window_tests {
         }
         #[cfg(not(target_os = "linux"))]
         {
-            assert_eq!(main.viewport.app_id.as_deref(), Some("spotifast"));
+            assert_eq!(main.viewport.app_id.as_deref(), Some("Spotify"));
             assert_eq!(mini.viewport.app_id, main.viewport.app_id);
             assert_eq!(main.persistence_path, None);
         }
@@ -1210,6 +1278,10 @@ mod native_window_tests {
 /// and, when the window goes away, hands the state back for the next window.
 struct Shell {
     app: fastframe_shell::Held<app::App>,
+    #[cfg(windows)]
+    frames_rendered: u32,
+    #[cfg(windows)]
+    should_maximize: bool,
     /// Whether this window's first frame checked that a monitor shows it.
     recovery_checked: bool,
     #[cfg(windows)]
@@ -1253,6 +1325,20 @@ impl Shell {
 
     /// One pass of the window's logic, run under the stall watch.
     fn run_logic(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        #[cfg(windows)]
+        if self.frames_rendered < 2 {
+            self.frames_rendered += 1;
+            ctx.request_repaint();
+            if let Some(window) = frame.winit_window() {
+                configure_win32_window(window);
+            }
+            if self.frames_rendered >= 2 {
+                if self.should_maximize {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(true));
+                }
+                ctx.send_viewport_cmd(egui::ViewportCommand::Visible(true));
+            }
+        }
         // A window restored where no monitor shows it any more (a display
         // unplugged since) comes back onto one.
         if !std::mem::replace(&mut self.recovery_checked, true) {
@@ -1488,7 +1574,7 @@ impl eframe::App for Shell {
         if self.app.settings.winamp_window {
             [0.0; 4]
         } else {
-            egui::Color32::from_rgba_unmultiplied(12, 12, 12, 180).to_normalized_gamma_f32()
+            egui::Color32::from_rgb(18, 18, 18).to_normalized_gamma_f32()
         }
     }
 

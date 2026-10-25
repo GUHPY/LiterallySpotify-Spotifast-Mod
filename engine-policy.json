@@ -1,0 +1,23 @@
+{
+  "engine_paths": [
+    "src/api", "src/auth.rs", "src/backend.rs", "src/credentials.rs",
+    "src/player.rs", "src/sink.rs", "src/resample.rs", "src/eq.rs",
+    "src/http.rs", "src/limiter.rs", "src/session_reads.rs",
+    "src/cast", "src/cast.rs", "src/sonos.rs", "src/zeroconf.rs",
+    "src/testdata", "assets/cast"
+  ],
+  "engine_dependencies": [
+    "librespot-core", "librespot-playback", "librespot-connect",
+    "librespot-metadata", "librespot-protocol", "rodio", "cpal",
+    "symphonia", "protobuf", "tokio", "reqwest", "mdns-sd",
+    "fastframe-audio", "fastframe-http", "hyper-proxy2"
+  ],
+  "protected_paths": [
+    "src/ui", "src/theme.rs", "src/motion.rs",
+    "src/updates.rs", "src/entrypoint.rs", "src/window.rs",
+    "src/paths.rs", "src/single_instance.rs",
+    "assets/icons", "assets/fonts", "assets/i18n", "assets/skins",
+    "assets/update-public-key.hex", "packaging", ".github",
+    "docs", "README.md", "LICENSE", "engine-policy.json"
+  ]
+}

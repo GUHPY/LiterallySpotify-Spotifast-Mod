@@ -199,6 +199,17 @@ impl Locale {
         .replace("{count}", &count.to_string())
     }
 
+    pub fn episode_count(self, count: u32) -> String {
+        ngettext(
+            self,
+            // Translators: Keep {count} exactly as written. It becomes a number of episodes.
+            "{count} episode",
+            "{count} episodes",
+            count,
+        )
+        .replace("{count}", &count.to_string())
+    }
+
     pub fn playlist_count(self, count: u32) -> String {
         ngettext(
             self,

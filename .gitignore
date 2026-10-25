@@ -13,3 +13,9 @@ docs/.bundle/
 /.cache/
 
 /dist/
+/.private/
+/reference-captures/
+*.log
+__pycache__/
+
+/themes/

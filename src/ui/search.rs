@@ -18,12 +18,23 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         recent(app, ui);
         return;
     }
+    let typing =
+        app.search.typed_at.is_some() || app.search.committed_run.is_some_and(|(_, typing)| typing);
+    let displayed_id = ui.make_persistent_id(("submitted-search-results", app.user_id()));
+    if !typing && let Some(results) = app.search.results.get() {
+        ui.data_mut(|data| {
+            data.insert_temp(
+                displayed_id,
+                (app.search.committed.clone(), results.clone()),
+            )
+        });
+    }
     ui.add_space(4.0);
     let labels: Vec<_> = SearchFilter::ALL
         .iter()
         .map(|f| (*f, f.label(app.locale)))
         .collect();
-    let options: Vec<(SearchFilter, &str)> = labels
+    let options: Vec<_> = labels
         .iter()
         .map(|(filter, label)| (*filter, label.as_ref()))
         .collect();
@@ -31,46 +42,42 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         app.actions.push(Action::SetSearchFilter(filter));
     }
     ui.add_space(12.0);
-    let pending = app.search.catalogue_pending || app.search.playlists_pending;
-    if pending {
-        widgets::loading_row(ui, &palette, app.locale);
-    }
-    if let Some(error) = app.search.error.clone() {
-        widgets::error_row(ui, app, &error, None);
-    }
-    let results = match &app.search.results {
-        Loadable::Loaded(results) => results.clone(),
-        Loadable::Loading | Loadable::NotLoaded => {
-            if !pending {
-                widgets::loading_row(ui, &palette, app.locale);
-            }
-            return;
+    if !typing {
+        let error = app
+            .search
+            .error
+            .clone()
+            .or_else(|| match &app.search.results {
+                Loadable::Failed(error) => Some(error.clone()),
+                _ => None,
+            });
+        if let Some(error) = error {
+            widgets::error_row(ui, app, &error, None);
         }
-        Loadable::Failed(error) => {
-            let error = error.clone();
-            if app.search.error.is_none() {
-                widgets::error_row(ui, app, &error, None);
-            }
-            return;
-        }
-    };
-    if results.is_empty() && (pending || app.search.error.is_some()) {
+    }
+    let Some((query, results)) =
+        ui.data(|data| data.get_temp::<(String, SearchResults)>(displayed_id))
+    else {
         return;
-    }
+    };
     if results.is_empty() {
+        if app.search.catalogue_pending
+            || app.search.playlists_pending
+            || app.search.error.is_some()
+        {
+            return;
+        }
         widgets::empty_state(
             ui,
             &palette,
             Icon::Search,
-            // Translators: {query} is the text the user searched for.
-            &gettext(app.locale, "No results for “{query}”")
-                .replace("{query}", &app.search.committed),
-            &gettext(app.locale, "Check the spelling, or try fewer words."),
+            &gettext(app.locale, "No results for “{query}”").replace("{query}", &query),
+            &gettext(app.locale, "Try a different spelling or keyword."),
         );
         return;
     }
     match app.search.filter {
-        SearchFilter::All => all(app, ui, &results),
+        SearchFilter::All => all(app, ui, &results, &query),
         SearchFilter::Songs => songs(app, ui, &results, usize::MAX),
         SearchFilter::Artists => artists_grid(app, ui, &results),
         SearchFilter::Albums => albums_grid(app, ui, &results),
@@ -82,8 +89,12 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
 
 fn recent(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
+    let locale = app.locale;
     ui.add_space(6.0);
-    if !app.network_reachable && app.settings.search_history.is_empty() {
+    if !app.network_reachable
+        && app.settings.search_history.is_empty()
+        && app.settings.recent_searches.is_empty()
+    {
         widgets::empty_state(
             ui,
             &palette,
@@ -96,7 +107,7 @@ fn recent(app: &mut App, ui: &mut egui::Ui) {
         );
         return;
     }
-    if app.settings.search_history.is_empty() {
+    if app.settings.search_history.is_empty() && app.settings.recent_searches.is_empty() {
         widgets::empty_state(
             ui,
             &palette,
@@ -109,26 +120,131 @@ fn recent(app: &mut App, ui: &mut egui::Ui) {
         );
         return;
     }
-    theme::section_title(ui, &palette, &gettext(app.locale, "Recent searches"));
-    ui.add_space(6.0);
-    let history = app.settings.search_history.clone();
-    ui.horizontal_wrapped(|ui| {
-        ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
-        for query in &history {
-            let (response, forget) = theme::soft_button_dismiss(ui, &palette, Icon::Clock, query);
-            if forget {
-                app.actions.push(Action::ForgetSearch(query.clone()));
-            } else if response.clicked() {
-                app.actions.push(Action::Search(query.clone()));
+
+    if !app.settings.recent_searches.is_empty() {
+        let recents = app.settings.recent_searches.clone();
+        ui.horizontal(|ui| {
+            theme::section_title(ui, &palette, &gettext(locale, "Recent searches"));
+            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                let clear_label = gettext(locale, "Clear recent searches");
+                if theme::link(ui, clear_label.as_ref(), theme::bold(13.0), palette.secondary).clicked() {
+                    app.actions.push(Action::ClearRecentItems);
+                }
+            });
+        });
+        ui.add_space(8.0);
+        widgets::shelf(ui, &palette, app.locale, "search-recents-shelf", "", |ui| {
+            for item in &recents {
+                recent_search_card(app, ui, item);
             }
-        }
-    });
+        });
+        ui.add_space(16.0);
+    } else {
+        theme::section_title(ui, &palette, &gettext(app.locale, "Recent searches"));
+        ui.add_space(6.0);
+        let history = app.settings.search_history.clone();
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().item_spacing = vec2(8.0, 8.0);
+            for query in &history {
+                let (response, forget) = theme::soft_button_dismiss(ui, &palette, Icon::Clock, query);
+                if forget {
+                    app.actions.push(Action::ForgetSearch(query.clone()));
+                } else if response.clicked() {
+                    app.actions.push(Action::Search(query.clone()));
+                }
+            }
+        });
+    }
 }
 
-fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
+fn recent_search_card(app: &mut App, ui: &mut egui::Ui, item: &crate::settings::RecentSearchItem) {
+    let palette = app.palette;
+    let context_here = app.playing_context_uri().as_deref() == Some(item.uri.as_str());
+    let playing_here = context_here && app.believed_playing();
+    let card = widgets::card(
+        ui,
+        app,
+        item.image.as_deref(),
+        &item.title,
+        &item.subtitle,
+        if item.is_circle {
+            widgets::CardCover::portrait(playing_here)
+        } else {
+            widgets::CardCover::square(playing_here)
+        },
+    );
+    let close_rect = Rect::from_center_size(
+        pos2(card.response.rect.right() - 20.0, card.response.rect.top() + 20.0),
+        Vec2::splat(24.0),
+    );
+    let over_close = ui.rect_contains_pointer(close_rect);
+    if card.response.hovered() || over_close {
+        let close_resp = ui.interact(
+            close_rect,
+            ui.id().with(("recent-card-close", &item.uri)),
+            Sense::click(),
+        )
+        .on_hover_text(gettext(app.locale, "Remove"));
+        ui.painter().circle_filled(
+            close_rect.center(),
+            12.0,
+            egui::Color32::from_black_alpha(180),
+        );
+        theme::paint_icon(
+            ui,
+            Icon::X,
+            close_rect,
+            13.0,
+            if close_resp.hovered() {
+                palette.text
+            } else {
+                palette.secondary
+            },
+        );
+        if close_resp.clicked() {
+            app.actions.push(Action::ForgetRecentItem(item.uri.clone()));
+            return;
+        }
+    }
+    if card.play {
+        if context_here {
+            app.actions.push(Action::TogglePlay);
+        } else if item.uri.starts_with("spotify:track:") {
+            let is_this_playing = app.now_playing().is_some_and(|np| np.playing && np.uri == item.uri);
+            if is_this_playing {
+                app.actions.push(Action::TogglePlay);
+            } else {
+                app.actions.push(Action::PlayUris {
+                    uris: vec![item.uri.clone()],
+                    index: 0,
+                });
+            }
+        } else {
+            app.actions.push(Action::PlayContext {
+                uri: item.uri.clone(),
+                offset_uri: None,
+                offset_index: None,
+            });
+        }
+    }
+    if card.clicked && !over_close {
+        if item.uri.starts_with("spotify:track:") {
+            app.actions.push(Action::PlayUris {
+                uris: vec![item.uri.clone()],
+                index: 0,
+            });
+        } else if let Some(page) = Page::from_uri(&item.uri) {
+            app.actions.push(Action::Open(page));
+        } else {
+            app.actions.push(Action::Search(item.title.clone()));
+        }
+    }
+}
+
+fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults, query: &str) {
     let palette = app.palette;
     let locale = app.locale;
-    let query = app.search.committed.to_lowercase();
+    let query = query.to_lowercase();
     let top_artist = results
         .artists
         .as_ref()
@@ -138,141 +254,112 @@ fn all(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
                 || results.tracks.as_ref().is_none_or(|t| t.items.is_empty())
         });
     let top_art = app.art_px(TOP_RESULT_ART);
-    let wide = ui.available_width() > 720.0;
-    ui.horizontal_top(|ui| {
-        ui.spacing_mut().item_spacing.x = 24.0;
-        let top_width = if wide {
-            (ui.available_width() * 0.36).clamp(240.0, 380.0)
-        } else {
-            ui.available_width()
-        };
-        ui.vertical(|ui| {
-            ui.set_width(top_width);
-            theme::section_title(ui, &palette, &gettext(locale, "Top result"));
-            ui.add_space(4.0);
-            if let Some(artist) = top_artist {
-                top_result(
-                    app,
+    if let Some(artist) = top_artist {
+        top_result(
+            app,
+            ui,
+            pick_image(&artist.images, top_art),
+            &artist.name,
+            TopResultSubtitle::Text(&gettext(locale, "Artist")),
+            true,
+            Some(artist.uri.clone()),
+            Page::Artist(artist.id.clone()),
+            false,
+            |ui, app| {
+                widgets::context_menu_items(ui, app, &artist.uri, &artist.name, None);
+            },
+        );
+    } else if let Some(track) = results.tracks.as_ref().and_then(|page| page.items.first()) {
+        let page = track
+            .album
+            .as_ref()
+            .map(|album| Page::Album(album.id.clone()))
+            .unwrap_or(Page::Search);
+        top_result(
+            app,
+            ui,
+            track.image(top_art),
+            &track.name,
+            TopResultSubtitle::SongArtists(&track.artists),
+            false,
+            Some(track.uri.clone()),
+            page,
+            track.explicit,
+            |ui, app| {
+                widgets::item_menu(ui, app, &PlayableItem::Track(track.clone()), None, None);
+            },
+        );
+    } else if let Some(album) = results.albums.as_ref().and_then(|page| page.items.first()) {
+        top_result(
+            app,
+            ui,
+            pick_image(&album.images, top_art),
+            &album.name,
+            TopResultSubtitle::Text(
+                // Translators: {artists} is the album's artist names.
+                &gettext(locale, "Album • {artists}").replace(
+                    "{artists}",
+                    &crate::api::models::join_names(album.artists.iter().map(|a| a.name.as_str())),
+                ),
+            ),
+            false,
+            Some(album.uri.clone()),
+            Page::Album(album.id.clone()),
+            false,
+            |ui, app| {
+                widgets::context_menu_items(ui, app, &album.uri, &album.name, None);
+            },
+        );
+    } else if let Some(playlist) = results
+        .playlists
+        .as_ref()
+        .and_then(|page| page.items.first())
+    {
+        top_result(
+            app,
+            ui,
+            pick_image(&playlist.images, top_art),
+            &playlist.name,
+            TopResultSubtitle::Text(
+                // Translators: {owner} is the name of the playlist's owner.
+                &gettext(locale, "Playlist • {owner}").replace("{owner}", playlist.owner_name()),
+            ),
+            false,
+            Some(playlist.uri.clone()),
+            Page::Playlist(playlist.id.clone()),
+            false,
+            |ui, app| {
+                let owned = app.user_id().is_some_and(|id| playlist.owned_by(id));
+                widgets::context_menu_items(
                     ui,
-                    pick_image(&artist.images, top_art),
-                    &artist.name,
-                    TopResultSubtitle::Text(&gettext(locale, "Artist")),
-                    true,
-                    Some(artist.uri.clone()),
-                    Page::Artist(artist.id.clone()),
-                    |ui, app| {
-                        widgets::context_menu_items(ui, app, &artist.uri, &artist.name, None);
-                    },
-                );
-            } else if let Some(track) = results.tracks.as_ref().and_then(|page| page.items.first())
-            {
-                let page = track
-                    .album
-                    .as_ref()
-                    .map(|album| Page::Album(album.id.clone()))
-                    .unwrap_or(Page::Search);
-                top_result(
                     app,
-                    ui,
-                    track.image(top_art),
-                    &track.name,
-                    TopResultSubtitle::SongArtists(&track.artists),
-                    false,
-                    Some(track.uri.clone()),
-                    page,
-                    |ui, app| {
-                        widgets::item_menu(
-                            ui,
-                            app,
-                            &PlayableItem::Track(track.clone()),
-                            None,
-                            None,
-                        );
-                    },
-                );
-            } else if let Some(album) = results.albums.as_ref().and_then(|page| page.items.first())
-            {
-                top_result(
-                    app,
-                    ui,
-                    pick_image(&album.images, top_art),
-                    &album.name,
-                    TopResultSubtitle::Text(
-                        // Translators: {artists} is the album's artist names.
-                        &gettext(locale, "Album • {artists}").replace(
-                            "{artists}",
-                            &crate::api::models::join_names(
-                                album.artists.iter().map(|a| a.name.as_str()),
-                            ),
-                        ),
-                    ),
-                    false,
-                    Some(album.uri.clone()),
-                    Page::Album(album.id.clone()),
-                    |ui, app| {
-                        widgets::context_menu_items(ui, app, &album.uri, &album.name, None);
-                    },
-                );
-            } else if let Some(playlist) = results
-                .playlists
-                .as_ref()
-                .and_then(|page| page.items.first())
-            {
-                top_result(
-                    app,
-                    ui,
-                    pick_image(&playlist.images, top_art),
+                    &playlist.uri,
                     &playlist.name,
-                    TopResultSubtitle::Text(
-                        // Translators: {owner} is the name of the playlist's owner.
-                        &gettext(locale, "Playlist • {owner}")
-                            .replace("{owner}", playlist.owner_name()),
-                    ),
-                    false,
-                    Some(playlist.uri.clone()),
-                    Page::Playlist(playlist.id.clone()),
-                    |ui, app| {
-                        let owned = app.user_id().is_some_and(|id| playlist.owned_by(id));
-                        widgets::context_menu_items(
-                            ui,
-                            app,
-                            &playlist.uri,
-                            &playlist.name,
-                            owned.then_some(playlist),
-                        );
-                    },
+                    owned.then_some(playlist),
                 );
-            } else if let Some(show) = results.shows.as_ref().and_then(|page| page.items.first()) {
-                top_result(
-                    app,
-                    ui,
-                    pick_image(&show.images, top_art),
-                    &show.name,
-                    TopResultSubtitle::Text(
-                        // Translators: {publisher} is the podcast's publisher.
-                        &gettext(locale, "Podcast • {publisher}")
-                            .replace("{publisher}", &show.publisher),
-                    ),
-                    false,
-                    Some(show.uri.clone()),
-                    Page::Show(show.id.clone()),
-                    |ui, app| {
-                        widgets::context_menu_items(ui, app, &show.uri, &show.name, None);
-                    },
-                );
-            }
-        });
-        if wide {
-            ui.vertical(|ui| {
-                ui.set_width(ui.available_width());
-                songs(app, ui, results, 4);
-            });
-        }
-    });
-    if !wide {
-        ui.add_space(12.0);
-        songs(app, ui, results, 4);
+            },
+        );
+    } else if let Some(show) = results.shows.as_ref().and_then(|page| page.items.first()) {
+        top_result(
+            app,
+            ui,
+            pick_image(&show.images, top_art),
+            &show.name,
+            TopResultSubtitle::Text(
+                // Translators: {publisher} is the podcast's publisher.
+                &gettext(locale, "Podcast • {publisher}").replace("{publisher}", &show.publisher),
+            ),
+            false,
+            Some(show.uri.clone()),
+            Page::Show(show.id.clone()),
+            false,
+            |ui, app| {
+                widgets::context_menu_items(ui, app, &show.uri, &show.name, None);
+            },
+        );
     }
+    ui.add_space(16.0);
+    songs(app, ui, results, 6);
     ui.add_space(8.0);
     shelf_artists(app, ui, results);
     shelf_albums(app, ui, results);
@@ -295,7 +382,7 @@ enum TopResultSubtitle<'a> {
 }
 
 /// The top result's cover size.
-const TOP_RESULT_ART: f32 = 96.0;
+const TOP_RESULT_ART: f32 = 80.0;
 
 #[allow(clippy::too_many_arguments)]
 fn top_result(
@@ -307,12 +394,13 @@ fn top_result(
     round: bool,
     play_uri: Option<String>,
     page: Page,
+    explicit: bool,
     menu: impl FnOnce(&mut egui::Ui, &mut App),
 ) {
     let palette = app.palette;
     let mut subtitle_clicked = false;
     let (rect, response) =
-        ui.allocate_exact_size(vec2(ui.available_width(), 232.0), Sense::click());
+        ui.allocate_exact_size(vec2(ui.available_width(), 112.0), Sense::click());
     if ui.is_rect_visible(rect) {
         let hovered = ui.rect_contains_pointer(rect);
         let fill = if hovered {
@@ -323,7 +411,7 @@ fn top_result(
         ui.painter()
             .rect_filled(rect, CornerRadius::same(theme::RADIUS), fill);
         let image_rect =
-            Rect::from_min_size(rect.min + vec2(20.0, 20.0), Vec2::splat(TOP_RESULT_ART));
+            Rect::from_min_size(rect.min + vec2(16.0, 16.0), Vec2::splat(TOP_RESULT_ART));
         widgets::paint_shadow(ui, &palette, image_rect, if round { 48.0 } else { 6.0 });
         widgets::paint_cover(
             ui,
@@ -335,8 +423,8 @@ fn top_result(
             Some(app.backend.art()),
         );
         let text_clip = Rect::from_min_max(
-            pos2(rect.left() + 20.0, image_rect.bottom() + 12.0),
-            pos2(rect.right() - 20.0, rect.bottom()),
+            pos2(image_rect.right() + 16.0, rect.top() + 18.0),
+            pos2(rect.right() - 84.0, rect.bottom()),
         );
         let painter = ui.painter().with_clip_rect(text_clip);
         crate::bidi::paint_line(
@@ -345,7 +433,7 @@ fn top_result(
             text_clip.right(),
             text_clip.top() + 16.0,
             title,
-            theme::bold(26.0),
+            theme::bold(20.0),
             palette.text,
         );
         match subtitle {
@@ -368,6 +456,27 @@ fn top_result(
                     theme::regular(13.5),
                     palette.secondary,
                 );
+                if explicit {
+                    let badge_w = 14.0;
+                    let (badge_rect, _) =
+                        child.allocate_exact_size(vec2(badge_w + 5.0, 14.0), Sense::hover());
+                    let inner = Rect::from_center_size(
+                        pos2(badge_rect.left() + 7.0, badge_rect.center().y),
+                        vec2(badge_w, 12.0),
+                    );
+                    child.painter().rect_filled(
+                        inner,
+                        CornerRadius::same(2),
+                        palette.secondary.gamma_multiply(0.4),
+                    );
+                    child.painter().text(
+                        inner.center(),
+                        egui::Align2::CENTER_CENTER,
+                        "E",
+                        theme::bold(9.0),
+                        palette.text,
+                    );
+                }
                 subtitle_clicked = widgets::artist_links(
                     &mut child,
                     app,
@@ -389,8 +498,19 @@ fn top_result(
             }
         }
         if hovered && let Some(uri) = &play_uri {
+            let is_this_playing = if uri.starts_with("spotify:track:") {
+                app.now_playing()
+                    .is_some_and(|np| np.playing && np.uri == *uri)
+            } else {
+                app.playing_context_uri().as_deref() == Some(uri.as_str()) && app.believed_playing()
+            };
+            let icon = if is_this_playing {
+                Icon::PauseFilled
+            } else {
+                Icon::PlayFilled
+            };
             let button = Rect::from_center_size(
-                pos2(rect.right() - 44.0, rect.bottom() - 44.0),
+                pos2(rect.right() - 40.0, rect.center().y),
                 Vec2::splat(48.0),
             );
             let mut child = ui.new_child(
@@ -398,34 +518,103 @@ fn top_result(
                     .max_rect(button)
                     .layout(Layout::centered_and_justified(egui::Direction::LeftToRight)),
             );
+            let tooltip = if is_this_playing {
+                gettext(app.locale, "Pause")
+            } else {
+                gettext(app.locale, "Play")
+            };
             if theme::circle_button(
                 &mut child,
-                Icon::PlayFilled,
+                icon,
                 48.0,
                 palette.accent,
                 palette.accent_hover,
                 palette.on_accent,
-                &gettext(app.locale, "Play"),
+                &tooltip,
             )
             .clicked()
             {
-                if uri.starts_with("spotify:track:") {
-                    app.actions.push(Action::PlayUris {
-                        uris: vec![uri.clone()],
-                        index: 0,
-                    });
+                if is_this_playing {
+                    app.actions.push(Action::TogglePlay);
                 } else {
-                    app.actions.push(Action::PlayContext {
-                        uri: uri.clone(),
-                        offset_uri: None,
-                        offset_index: None,
-                    });
+                    let sub_text = match &subtitle {
+                        TopResultSubtitle::Text(s) => s.to_string(),
+                        TopResultSubtitle::SongArtists(artists) => {
+                            format!(
+                                "{} • {}",
+                                gettext(app.locale, "Song"),
+                                crate::api::models::join_names(
+                                    artists.iter().map(|a| a.name.as_str())
+                                )
+                            )
+                        }
+                    };
+                    app.actions.push(Action::RememberRecentItem(
+                        crate::settings::RecentSearchItem {
+                            title: title.to_string(),
+                            subtitle: sub_text,
+                            image: image.map(str::to_string),
+                            uri: uri.clone(),
+                            explicit,
+                            is_circle: round,
+                            verified: false,
+                        },
+                    ));
+                    if uri.starts_with("spotify:track:") {
+                        app.actions.push(Action::PlayUris {
+                            uris: vec![uri.clone()],
+                            index: 0,
+                        });
+                    } else {
+                        app.actions.push(Action::PlayContext {
+                            uri: uri.clone(),
+                            offset_uri: None,
+                            offset_index: None,
+                        });
+                    }
                 }
             }
         }
     }
-    if response.clicked() && !subtitle_clicked && page != Page::Search {
-        app.actions.push(Action::Open(page));
+    if response.clicked() && !subtitle_clicked {
+        let sub_text = match &subtitle {
+            TopResultSubtitle::Text(s) => s.to_string(),
+            TopResultSubtitle::SongArtists(artists) => {
+                format!(
+                    "{} • {}",
+                    gettext(app.locale, "Song"),
+                    crate::api::models::join_names(artists.iter().map(|a| a.name.as_str()))
+                )
+            }
+        };
+        app.actions.push(Action::RememberRecentItem(
+            crate::settings::RecentSearchItem {
+                title: title.to_string(),
+                subtitle: sub_text,
+                image: image.map(str::to_string),
+                uri: play_uri.clone().unwrap_or_default(),
+                explicit,
+                is_circle: round,
+                verified: false,
+            },
+        ));
+        if let Some(uri) = &play_uri
+            && uri.starts_with("spotify:track:")
+        {
+            let is_this_playing = app
+                .now_playing()
+                .is_some_and(|np| np.playing && np.uri == *uri);
+            if is_this_playing {
+                app.actions.push(Action::TogglePlay);
+            } else {
+                app.actions.push(Action::PlayUris {
+                    uris: vec![uri.clone()],
+                    index: 0,
+                });
+            }
+        } else if page != Page::Search {
+            app.actions.push(Action::Open(page));
+        }
     }
     egui::Popup::context_menu(&response)
         .frame(widgets::menu_frame(&palette))
@@ -440,8 +629,10 @@ fn songs(app: &mut App, ui: &mut egui::Ui, results: &SearchResults, limit: usize
     if page.items.is_empty() {
         return;
     }
-    theme::section_title(ui, &palette, &gettext(app.locale, "Songs"));
-    ui.add_space(4.0);
+    if limit == usize::MAX {
+        theme::section_title(ui, &palette, &gettext(app.locale, "Songs"));
+        ui.add_space(4.0);
+    }
     let uris: Arc<[String]> = page
         .items
         .iter()
@@ -456,7 +647,7 @@ fn songs(app: &mut App, ui: &mut egui::Ui, results: &SearchResults, limit: usize
         .map(PlayableItem::Track)
         .collect();
     for (index, item) in items.iter().take(limit).enumerate() {
-        widgets::track_row(
+        let (resp, _pick) = widgets::track_row_response(
             ui,
             app,
             TrackRow {
@@ -476,6 +667,27 @@ fn songs(app: &mut App, ui: &mut egui::Ui, results: &SearchResults, limit: usize
                 picked_songs: &[],
             },
         );
+        if resp.clicked() || resp.double_clicked() {
+            if let PlayableItem::Track(track) = item {
+                app.actions.push(Action::RememberRecentItem(
+                    crate::settings::RecentSearchItem {
+                        title: track.name.clone(),
+                        subtitle: format!(
+                            "{} • {}",
+                            gettext(app.locale, "Song"),
+                            crate::api::models::join_names(
+                                track.artists.iter().map(|a| a.name.as_str())
+                            )
+                        ),
+                        image: track.image(app.art_px(40.0)).map(str::to_string),
+                        uri: track.uri.clone(),
+                        explicit: track.explicit,
+                        is_circle: false,
+                        verified: false,
+                    },
+                ));
+            }
+        }
     }
 }
 
@@ -492,6 +704,15 @@ fn artist_card(app: &mut App, ui: &mut egui::Ui, artist: &Artist) {
         widgets::CardCover::portrait(playing_here),
     );
     if card.play {
+        app.actions.push(Action::RememberRecentItem(crate::settings::RecentSearchItem {
+            title: artist.name.clone(),
+            subtitle: gettext(app.locale, "Artist").into_owned(),
+            image: pick_image(&artist.images, card_art).map(str::to_string),
+            uri: artist.uri.clone(),
+            explicit: false,
+            is_circle: true,
+            verified: false,
+        }));
         if context_here {
             app.actions.push(Action::TogglePlay);
         } else {
@@ -503,6 +724,15 @@ fn artist_card(app: &mut App, ui: &mut egui::Ui, artist: &Artist) {
         }
     }
     if card.clicked {
+        app.actions.push(Action::RememberRecentItem(crate::settings::RecentSearchItem {
+            title: artist.name.clone(),
+            subtitle: gettext(app.locale, "Artist").into_owned(),
+            image: pick_image(&artist.images, card_art).map(str::to_string),
+            uri: artist.uri.clone(),
+            explicit: false,
+            is_circle: true,
+            verified: false,
+        }));
         app.actions
             .push(Action::Open(Page::Artist(artist.id.clone())));
     }
@@ -522,7 +752,7 @@ fn shelf_artists(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     }
     widgets::shelf(
         ui,
-        &palette,
+        &palette, app.locale,
         "search-artists",
         &gettext(app.locale, "Artists"),
         |ui| {
@@ -560,6 +790,15 @@ fn album_card(app: &mut App, ui: &mut egui::Ui, album: &crate::api::models::Albu
         widgets::CardCover::square(playing_here),
     );
     if card.play {
+        app.actions.push(Action::RememberRecentItem(crate::settings::RecentSearchItem {
+            title: album.name.clone(),
+            subtitle: subtitle.trim_start_matches(" • ").to_string(),
+            image: pick_image(&album.images, card_art).map(str::to_string),
+            uri: album.uri.clone(),
+            explicit: false,
+            is_circle: false,
+            verified: false,
+        }));
         if context_here {
             app.actions.push(Action::TogglePlay);
         } else {
@@ -571,6 +810,15 @@ fn album_card(app: &mut App, ui: &mut egui::Ui, album: &crate::api::models::Albu
         }
     }
     if card.clicked {
+        app.actions.push(Action::RememberRecentItem(crate::settings::RecentSearchItem {
+            title: album.name.clone(),
+            subtitle: subtitle.trim_start_matches(" • ").to_string(),
+            image: pick_image(&album.images, card_art).map(str::to_string),
+            uri: album.uri.clone(),
+            explicit: false,
+            is_circle: false,
+            verified: false,
+        }));
         app.actions
             .push(Action::Open(Page::Album(album.id.clone())));
     }
@@ -590,7 +838,7 @@ fn shelf_albums(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     }
     widgets::shelf(
         ui,
-        &palette,
+        &palette, app.locale,
         "search-albums",
         &gettext(app.locale, "Albums"),
         |ui| {
@@ -624,6 +872,15 @@ fn playlist_card(app: &mut App, ui: &mut egui::Ui, playlist: &crate::api::models
         widgets::CardCover::square(playing_here),
     );
     if card.play {
+        app.actions.push(Action::RememberRecentItem(crate::settings::RecentSearchItem {
+            title: playlist.name.clone(),
+            subtitle: gettext(app.locale, "By {owner}").replace("{owner}", playlist.owner_name()),
+            image: pick_image(&playlist.images, card_art).map(str::to_string),
+            uri: playlist.uri.clone(),
+            explicit: false,
+            is_circle: false,
+            verified: false,
+        }));
         if context_here {
             app.actions.push(Action::TogglePlay);
         } else {
@@ -635,6 +892,15 @@ fn playlist_card(app: &mut App, ui: &mut egui::Ui, playlist: &crate::api::models
         }
     }
     if card.clicked {
+        app.actions.push(Action::RememberRecentItem(crate::settings::RecentSearchItem {
+            title: playlist.name.clone(),
+            subtitle: gettext(app.locale, "By {owner}").replace("{owner}", playlist.owner_name()),
+            image: pick_image(&playlist.images, card_art).map(str::to_string),
+            uri: playlist.uri.clone(),
+            explicit: false,
+            is_circle: false,
+            verified: false,
+        }));
         app.actions
             .push(Action::Open(Page::Playlist(playlist.id.clone())));
     }
@@ -663,7 +929,7 @@ fn shelf_playlists(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     }
     widgets::shelf(
         ui,
-        &palette,
+        &palette, app.locale,
         "search-playlists",
         &gettext(app.locale, "Playlists"),
         |ui| {
@@ -696,6 +962,15 @@ fn show_card(app: &mut App, ui: &mut egui::Ui, show: &crate::api::models::Show) 
         widgets::CardCover::default(),
     );
     if card.clicked {
+        app.actions.push(Action::RememberRecentItem(crate::settings::RecentSearchItem {
+            title: show.name.clone(),
+            subtitle: gettext(app.locale, "Podcast • {publisher}").replace("{publisher}", &show.publisher),
+            image: pick_image(&show.images, card_art).map(str::to_string),
+            uri: show.uri.clone(),
+            explicit: false,
+            is_circle: false,
+            verified: false,
+        }));
         app.actions.push(Action::Open(Page::Show(show.id.clone())));
     }
     egui::Popup::context_menu(&card.response)
@@ -714,7 +989,7 @@ fn shelf_shows(app: &mut App, ui: &mut egui::Ui, results: &SearchResults) {
     }
     widgets::shelf(
         ui,
-        &palette,
+        &palette, app.locale,
         "search-shows",
         &gettext(app.locale, "Podcasts"),
         |ui| {

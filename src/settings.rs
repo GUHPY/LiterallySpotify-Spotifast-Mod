@@ -38,6 +38,36 @@ impl LibrarySort {
     }
 }
 
+/// The four library sidebar presentation modes in Spotify.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum LibraryView {
+    CompactList,
+    #[default]
+    StandardList,
+    CompactGrid,
+    StandardGrid,
+}
+
+impl LibraryView {
+    pub fn is_grid(self) -> bool {
+        matches!(self, Self::CompactGrid | Self::StandardGrid)
+    }
+
+    pub fn is_compact(self) -> bool {
+        matches!(self, Self::CompactList | Self::CompactGrid)
+    }
+
+    pub fn icon(self) -> crate::theme::Icon {
+        match self {
+            Self::CompactList => crate::theme::Icon::ListCompact,
+            Self::StandardList => crate::theme::Icon::ListStandard,
+            Self::CompactGrid => crate::theme::Icon::GridCompact,
+            Self::StandardGrid => crate::theme::Icon::GridStandard,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ThemeChoice {
@@ -63,6 +93,7 @@ impl Default for HomeShelfSettings {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct HomeSettings {
+    pub promo: HomeShelfSettings,
     pub made_for_you: HomeShelfSettings,
     pub recommendations: HomeShelfSettings,
 }
@@ -220,6 +251,19 @@ fn proxy_mode_is_system(mode: &ProxyMode) -> bool {
     *mode == ProxyMode::System
 }
 
+/// A clickable media item saved in Recent searches (track, artist, album, playlist, or show).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
+pub struct RecentSearchItem {
+    pub title: String,
+    pub subtitle: String,
+    pub image: Option<String>,
+    pub uri: String,
+    pub explicit: bool,
+    pub is_circle: bool,
+    pub verified: bool,
+}
+
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -279,6 +323,8 @@ pub struct Settings {
     pub sidebar_compact: bool,
     /// Show the Library as responsive cover cards instead of rows.
     pub sidebar_grid: bool,
+    #[serde(default)]
+    pub library_view: LibraryView,
     pub sidebar_width: f32,
     pub lyrics_width: f32,
     pub queue_width: f32,
@@ -289,6 +335,8 @@ pub struct Settings {
     /// Windows always autoscrolls and macOS never does.
     pub middle_click_autoscroll: bool,
     pub search_history: Vec<String>,
+    #[serde(default)]
+    pub recent_searches: Vec<RecentSearchItem>,
     pub show_shortcut_hints: bool,
     /// An optional personal Spotify Web API application id. The shared
     /// application remains active for coverage when this is present.
@@ -423,7 +471,7 @@ impl Default for Settings {
     /// settings files, including an inactive playlist ownership filter.
     fn default() -> Self {
         Self {
-            device_name: "Spotifast".to_string(),
+            device_name: "Spotify".to_string(),
             bitrate: 320,
             normalisation: false,
             autoplay: true,
@@ -448,12 +496,14 @@ impl Default for Settings {
             art_expanded: false,
             sidebar_compact: false,
             sidebar_grid: false,
+            library_view: LibraryView::StandardList,
             sidebar_width: 250.0,
             lyrics_width: 360.0,
             queue_width: 360.0,
             tracklist_compact: false,
             middle_click_autoscroll: false,
             search_history: Vec::new(),
+            recent_searches: Vec::new(),
             show_shortcut_hints: true,
             web_client_id: None,
             personal_app_nudge_at: None,
@@ -511,6 +561,24 @@ fn default_buffer_ms() -> u32 {
 }
 
 impl Settings {
+    pub fn library_view(&self) -> LibraryView {
+        if self.library_view != LibraryView::StandardList {
+            self.library_view
+        } else if self.sidebar_grid {
+            LibraryView::StandardGrid
+        } else if self.sidebar_compact {
+            LibraryView::CompactList
+        } else {
+            LibraryView::StandardList
+        }
+    }
+
+    pub fn set_library_view(&mut self, view: LibraryView) {
+        self.library_view = view;
+        self.sidebar_compact = matches!(view, LibraryView::CompactList);
+        self.sidebar_grid = view.is_grid();
+    }
+
     pub(crate) fn cached_palette(&self) -> Option<crate::theme::Palette> {
         let theme = if self.custom_theme.is_some() {
             self.custom_theme_cache.as_ref()
@@ -589,6 +657,7 @@ impl Settings {
                 });
                 settings.migrate_proxy(text);
                 settings.forget_unusable_screen_rate();
+                settings.search_history.retain(|q| q.trim().chars().count() >= 3);
                 settings.proxy_password_legacy = !settings.proxy_password.is_empty();
                 settings
             }
@@ -630,6 +699,27 @@ impl Settings {
         self.search_history.retain(|entry| entry != query);
         self.search_history.insert(0, query.to_string());
         self.search_history.truncate(12);
+    }
+
+    pub fn remember_recent_item(&mut self, item: RecentSearchItem) {
+        if item.title.trim().is_empty() || item.uri.trim().is_empty() {
+            return;
+        }
+        self.recent_searches.retain(|existing| existing.uri != item.uri);
+        self.recent_searches.insert(0, item);
+        self.recent_searches.truncate(12);
+    }
+
+    pub fn forget_recent_item(&mut self, key: &str) {
+        self.recent_searches
+            .retain(|item| item.uri != key && !item.title.eq_ignore_ascii_case(key));
+        self.search_history
+            .retain(|entry| !entry.eq_ignore_ascii_case(key));
+    }
+
+    pub fn clear_recent_items(&mut self) {
+        self.recent_searches.clear();
+        self.search_history.clear();
     }
 
     /// Forgets the frame rate an earlier version set from Windows's 1 Hz
@@ -1067,6 +1157,18 @@ mod tests {
         assert!(old.home.made_for_you.visible);
         assert!(old.home.recommendations.visible);
         assert_eq!(old.volume, 12345);
+    }
+
+    #[test]
+    fn dismissed_home_promo_stays_hidden_without_changing_other_shelves() {
+        let mut settings = Settings::default();
+        assert!(settings.home.promo.visible);
+        settings.home.promo.visible = false;
+        let restored: Settings =
+            serde_json::from_str(&serde_json::to_string(&settings).unwrap()).unwrap();
+        assert!(!restored.home.promo.visible);
+        assert!(restored.home.made_for_you.visible);
+        assert!(restored.home.recommendations.visible);
     }
 
     /// Notepad and Windows PowerShell can save UTF-8 with a byte order mark.

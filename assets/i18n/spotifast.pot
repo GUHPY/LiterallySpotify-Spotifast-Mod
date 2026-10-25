@@ -3211,3 +3211,448 @@ msgid ""
 "virtual machine does not provide one. Install the graphics driver, or turn "
 "on GPU acceleration for the virtual machine. Open {url} to read more?"
 msgstr ""
+
+
+msgid "Adjust the zoom level to fit Spotify to your preferences and needs."
+msgstr ""
+
+
+msgid "All"
+msgstr ""
+
+
+msgid "Alphabetical"
+msgstr ""
+
+
+msgid "Audiobooks"
+msgstr ""
+
+
+msgid "Blend"
+msgstr ""
+
+
+msgid "Browse"
+msgstr ""
+
+
+msgid "Clear recent searches"
+msgstr ""
+
+
+msgid "Collapse Your Library"
+msgstr ""
+
+
+msgid "Compact grid"
+msgstr ""
+
+
+msgid "Compact list"
+msgstr ""
+
+
+msgid "Connect"
+msgstr ""
+
+
+msgid "Creator"
+msgstr ""
+
+
+msgid "Default"
+msgstr ""
+
+
+msgid "Dense"
+msgstr ""
+
+
+msgid "Don't see your device?"
+msgstr ""
+
+
+msgid "Draw Spotify's own title bar and window buttons instead of the desktop's."
+msgstr ""
+
+
+msgid "Enter full screen"
+msgstr ""
+
+
+msgid "Expand Your Library"
+msgstr ""
+
+
+msgid "Friend Activity"
+msgstr ""
+
+
+msgid "Go back"
+msgstr ""
+
+
+msgid "Go forward"
+msgstr ""
+
+
+msgid "Go to Settings > Listening activity and insights in the Spotify app to manage your listening activity."
+msgstr ""
+
+
+msgid "Hide"
+msgstr ""
+
+
+msgid "Jam"
+msgstr ""
+
+
+msgid "Let your friends and followers on Spotify see what you're listening to."
+msgstr ""
+
+
+msgid "Listen now"
+msgstr ""
+
+
+msgid "Listen together from anywhere"
+msgstr ""
+
+
+msgid "Listening activity"
+msgstr ""
+
+
+msgid "Lyrics preview"
+msgstr ""
+
+
+msgid "Made for"
+msgstr ""
+
+
+msgid "Menu"
+msgstr ""
+
+
+msgid "Mixed playlist"
+msgstr ""
+
+
+msgid "More options"
+msgstr ""
+
+
+msgid "Music"
+msgstr ""
+
+
+msgid "Music playing on this computer will stop when Spotify restarts."
+msgstr ""
+
+
+msgid "Music video"
+msgstr ""
+
+
+msgid "New releases will appear here. Follow your favorite artists and podcasts to stay up to date."
+msgstr ""
+
+
+msgid "No other devices found"
+msgstr ""
+
+
+msgid "On other networks"
+msgstr ""
+
+
+msgid "Open Miniplayer"
+msgstr ""
+
+
+msgid "Playback needs Spotify Premium. Free accounts can browse and search, but cannot play music through Spotify."
+msgstr ""
+
+
+msgid "Podcasts and shows"
+msgstr ""
+
+
+msgid "Popular songs and recommendations picked for you."
+msgstr ""
+
+
+msgid "Popular songs and trending stations"
+msgstr ""
+
+
+msgid "Real friend activity is not available to this client through Spotify."
+msgstr ""
+
+
+msgid "Related music videos"
+msgstr ""
+
+
+msgid "Reset"
+msgstr ""
+
+
+msgid "Saved & downloaded"
+msgstr ""
+
+
+msgid "Show all"
+msgstr ""
+
+
+msgid "Show more"
+msgstr ""
+
+
+msgid "Sign in through your browser. Spotify never sees your password. Local playback needs Spotify Premium."
+msgstr ""
+
+
+msgid "Song"
+msgstr ""
+
+
+msgid "Spacious"
+msgstr ""
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Cmd+Q."
+msgstr ""
+
+
+msgid "Spotify hides to the system tray. Quit from the tray menu or with Ctrl+Q."
+msgstr ""
+
+
+msgid "Spotify's default connection shares Spotify's request limit with other listeners. When it gets busy, loading music and using playback controls can take longer."
+msgstr ""
+
+
+msgid "Standard grid"
+msgstr ""
+
+
+msgid "Standard list"
+msgstr ""
+
+
+msgid "Start a Jam"
+msgstr ""
+
+
+msgid "The latest releases from artists, podcasts and shows you follow."
+msgstr ""
+
+
+msgid "There are no new releases for you right now."
+msgstr ""
+
+
+msgid "These features are not available to this client through Spotify."
+msgstr ""
+
+
+msgid "This computer"
+msgstr ""
+
+
+msgid "This device's volume can't be changed from Spotify"
+msgstr ""
+
+
+msgid "What's New"
+msgstr ""
+
+
+msgid "You can also change the zoom with Cmd+- or Cmd++."
+msgstr ""
+
+
+msgid "You can also change the zoom with Ctrl+- or Ctrl++."
+msgstr ""
+
+
+msgid "Your Episodes"
+msgstr ""
+
+
+msgid "Your Library"
+msgstr ""
+
+
+msgid "Zoom level"
+msgstr ""
+
+
+msgid "Bass Booster"
+msgstr ""
+
+
+msgid "Bass Reducer"
+msgstr ""
+
+
+msgid "Classical"
+msgstr ""
+
+
+msgid "Club"
+msgstr ""
+
+
+msgid "Custom"
+msgstr ""
+
+
+msgid "Dance"
+msgstr ""
+
+
+msgid "Flat"
+msgstr ""
+
+
+msgid "Full Bass"
+msgstr ""
+
+
+msgid "Full Bass & Treble"
+msgstr ""
+
+
+msgid "Full Treble"
+msgstr ""
+
+
+msgid "Laptop Speakers / Headphones"
+msgstr ""
+
+
+msgid "Large Hall"
+msgstr ""
+
+
+msgid "Live"
+msgstr ""
+
+
+msgid "Loudness"
+msgstr ""
+
+
+msgid "Night Listening"
+msgstr ""
+
+
+msgid "Party"
+msgstr ""
+
+
+msgid "Pop"
+msgstr ""
+
+
+msgid "Recents"
+msgstr ""
+
+
+msgid "Reggae"
+msgstr ""
+
+
+msgid "Rock"
+msgstr ""
+
+
+msgid "Ska"
+msgstr ""
+
+
+msgid "Small Speakers"
+msgstr ""
+
+
+msgid "Soft"
+msgstr ""
+
+
+msgid "Soft Rock"
+msgstr ""
+
+
+msgid "Sort by"
+msgstr ""
+
+
+msgid "Spoken Word"
+msgstr ""
+
+
+msgid "Techno"
+msgstr ""
+
+
+msgid "Treble Booster"
+msgstr ""
+
+
+msgid "View as"
+msgstr ""
+
+
+msgid "Vocal Booster"
+msgstr ""
+
+
+msgid "Show Now Playing view"
+msgstr ""
+
+
+msgid "Bring your friends' music tastes together in one playlist"
+msgstr ""
+
+
+msgid "Create a playlist with songs or episodes"
+msgstr ""
+
+
+msgid "Mix songs with smooth transitions"
+msgstr ""
+
+
+msgid "Organize your playlists"
+msgstr ""
+
+
+#: src/ui/lyrics.rs
+msgid "About the artist"
+msgstr ""
+
+
+#: src/ui/lyrics.rs
+msgid "Credits"
+msgstr ""
+
+
+#: src/ui/lyrics.rs
+msgid "Up next"
+msgstr ""
+
+
+#: src/ui/lyrics.rs
+msgid "Open queue"
+msgstr ""
+
+
+#: src/ui/widgets.rs
+msgid "View credits"
+msgstr ""

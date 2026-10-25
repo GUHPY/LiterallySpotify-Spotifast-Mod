@@ -109,6 +109,7 @@ fn episode_retained_bytes(episode: &Episode) -> usize {
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Page {
     Home,
+    WhatsNew,
     TopSongs,
     Search,
     LikedSongs,
@@ -131,6 +132,7 @@ impl Page {
     pub fn encode(&self) -> String {
         match self {
             Page::Home => "home".into(),
+            Page::WhatsNew => "whats-new".into(),
             Page::TopSongs => "top-songs".into(),
             Page::Search => "search".into(),
             Page::LikedSongs => "liked".into(),
@@ -151,6 +153,7 @@ impl Page {
     pub fn decode(text: &str) -> Option<Self> {
         Some(match text {
             "home" => Page::Home,
+            "whats-new" => Page::WhatsNew,
             "top-songs" => Page::TopSongs,
             "search" => Page::Search,
             "liked" => Page::LikedSongs,
@@ -732,6 +735,7 @@ pub struct SearchState {
     /// The Recent searches entry a run recorded. A pause while typing commits
     /// a prefix; the next query of the same run replaces it.
     pub typed_entry: Option<(u64, String)>,
+    pub history_item_serial: Option<u64>,
     pub focus_requested: bool,
 }
 
@@ -950,6 +954,7 @@ pub struct DragEntry {
 
 #[derive(Clone, Debug)]
 pub enum Dialog {
+    Credits(Box<Track>),
     CreatePlaylist {
         name: String,
         public: bool,
@@ -1008,6 +1013,8 @@ pub enum Action {
     },
     /// Extracts a page's tint while its library row is hovered.
     PrepareTint(String),
+    /// Load the artist card without navigating away from the current page.
+    LoadArtist(String),
     OpenUri(String),
     /// A Spotify link from outside the app: its page opens and the window
     /// comes forward, once the account is signed in.
@@ -1172,6 +1179,9 @@ pub enum Action {
     /// next query starts a new run of typing.
     EndSearchRun,
     ForgetSearch(String),
+    RememberRecentItem(crate::settings::RecentSearchItem),
+    ForgetRecentItem(String),
+    ClearRecentItems,
     SetSearchFilter(SearchFilter),
     FocusSearch,
     LoadMore(Page),
@@ -1199,6 +1209,8 @@ pub enum Action {
     ToggleSidebar,
     ToggleQueuePanel,
     ToggleLyricsPanel,
+    ToggleFriendActivity,
+    ToggleJam,
     SetLyricsFullscreen(bool),
     LyricsLineShown(Option<usize>),
     FollowLyrics,
@@ -1223,6 +1235,7 @@ pub enum Action {
         sort: crate::settings::LibrarySort,
     },
     SetLibraryGrid(bool),
+    SetLibraryView(crate::settings::LibraryView),
     ToggleLibraryFolder(String),
     ArrangeLibrary {
         pinned: Vec<String>,

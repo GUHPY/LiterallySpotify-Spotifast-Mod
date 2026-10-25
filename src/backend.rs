@@ -2225,39 +2225,19 @@ impl Worker {
                         waker.wake();
                     });
                 }
-                Command::DownloadUpdate { release, source } => {
-                    let proxy = self.engine_config.proxy.clone();
+                Command::DownloadUpdate { .. } => {
                     let events = self.events.clone();
                     let waker = self.waker.clone();
                     tokio::task::spawn_blocking(move || {
-                        let result = crate::updates::updater(&proxy)
-                            .and_then(|updater| {
-                                updater
-                                    .with_source(source)
-                                    .download(&release, |received, total| {
-                                        let _ =
-                                            events.send(Event::UpdateProgress { received, total });
-                                        waker.wake();
-                                    })
-                            })
-                            .map(Box::new)
-                            .map_err(|error| format!("{error:#}"));
-                        let _ = events.send(Event::UpdateDownloaded(result));
+                        let _ = events.send(Event::UpdateDownloaded(Err("Updates are managed through Debloat".into())));
                         waker.wake();
                     });
                 }
-                Command::InstallUpdate {
-                    prepared,
-                    arguments,
-                } => {
-                    let proxy = self.engine_config.proxy.clone();
+                Command::InstallUpdate { .. } => {
                     let events = self.events.clone();
                     let waker = self.waker.clone();
                     tokio::task::spawn_blocking(move || {
-                        let result = crate::updates::updater(&proxy)
-                            .and_then(|updater| updater.handoff(*prepared, arguments))
-                            .map_err(|error| format!("{error:#}"));
-                        let _ = events.send(Event::UpdateInstalling(result));
+                        let _ = events.send(Event::UpdateInstalling(Err("Updates are managed through Debloat".into())));
                         waker.wake();
                     });
                 }
@@ -3626,19 +3606,11 @@ impl Worker {
         });
     }
 
-    fn check_for_updates(&self, manual: bool, source: crate::updates::Source) {
-        // A proxy still being restored or refused blocks the check, as it
-        // blocks every other request.
-        let usable = self.http.client().map(|_| ());
-        let proxy = self.engine_config.proxy.clone();
+    fn check_for_updates(&self, manual: bool, _source: crate::updates::Source) {
         let events = self.events.clone();
         let waker = self.waker.clone();
         tokio::task::spawn_blocking(move || {
-            let result = usable.and_then(|()| {
-                crate::updates::updater(&proxy)
-                    .and_then(|updater| updater.with_source(source).check())
-                    .map_err(|error| format!("{error:#}"))
-            });
+            let result = Ok(None);
             let _ = events.send(Event::UpdateChecked { manual, result });
             waker.wake();
         });

@@ -12,6 +12,9 @@ use crate::theme::{self, Icon};
 
 use super::widgets::{self, TrackRow};
 
+const HOME_FILTER_ID: &str = "home-category-filter";
+pub(super) const HOME_HOVER_TINT_ID: &str = "home-hover-tint";
+
 pub fn show(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
     if !app.network_reachable {
@@ -39,22 +42,244 @@ pub fn show(app: &mut App, ui: &mut egui::Ui) {
         });
         return;
     }
-    ui.add_space(6.0);
-    let greeting = crate::util::greeting(app.locale);
-    theme::text(ui, greeting.as_ref(), theme::bold(30.0), palette.text);
+    ui.add_space(4.0);
+    if app.settings.home.promo.visible {
+        promo_banner(app, ui);
+    }
+    ui.add_space(4.0);
+
+    let filter_id = egui::Id::new(HOME_FILTER_ID);
+    let mut category = ui
+        .data(|data| data.get_temp::<usize>(filter_id))
+        .unwrap_or(0);
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 8.0;
+        let pills = [
+            (0usize, gettext(app.locale, "All")),
+            (1, gettext(app.locale, "Music")),
+            (2, gettext(app.locale, "Podcasts")),
+            (3, gettext(app.locale, "Audiobooks")),
+        ];
+        for (idx, label) in &pills {
+            let selected = category == *idx;
+            let font = theme::medium(13.5);
+            let galley = ui
+                .painter()
+                .layout_no_wrap(label.to_string(), font.clone(), palette.text);
+            let size = vec2(galley.size().x + 24.0, 32.0);
+            let (rect, response) = ui.allocate_exact_size(size, Sense::click());
+            if ui.is_rect_visible(rect) {
+                let (bg, fg) = if selected {
+                    (palette.text, palette.window)
+                } else if response.hovered() {
+                    (egui::Color32::from_white_alpha(36), palette.text)
+                } else {
+                    (egui::Color32::from_white_alpha(20), palette.text)
+                };
+                ui.painter().rect_filled(rect, 16.0, bg);
+                ui.painter().text(
+                    rect.center(),
+                    egui::Align2::CENTER_CENTER,
+                    label.as_ref(),
+                    font,
+                    fg,
+                );
+            }
+            if response.clicked() {
+                category = *idx;
+                ui.data_mut(|data| data.insert_temp(filter_id, category));
+            }
+        }
+    });
     ui.add_space(12.0);
     quick_access(app, ui);
     ui.add_space(16.0);
 
-    if app.settings.home.made_for_you.visible {
+    if category != 2 && category != 3 && app.settings.home.made_for_you.visible {
         made_for_you(app, ui);
     }
-    recently_played(app, ui);
-    podcasts(app, ui);
-    top_artists(app, ui);
-    top_tracks(app, ui);
-    if app.settings.home.recommendations.visible {
-        recommendations(app, ui);
+    if category != 2 && category != 3 {
+        recently_played(app, ui);
+    }
+    if category == 0 || category == 2 {
+        podcasts(app, ui);
+    }
+    if category != 2 && category != 3 {
+        top_artists(app, ui);
+        top_tracks(app, ui);
+        if app.settings.home.recommendations.visible {
+            recommendations(app, ui);
+        }
+    }
+}
+
+fn promo_banner(app: &mut App, ui: &mut egui::Ui) {
+    let palette = app.palette;
+    let width = ui.available_width();
+    let height = 168.0;
+    let (rect, _) = ui.allocate_exact_size(vec2(width, height), Sense::hover());
+    if !ui.is_rect_visible(rect) {
+        return;
+    }
+    // Dark editorial gradient card
+    ui.painter().rect_filled(
+        rect,
+        CornerRadius::same(8),
+        egui::Color32::from_rgb(24, 24, 28),
+    );
+    widgets::paint_vertical_gradient(
+        ui,
+        rect,
+        egui::Color32::from_rgba_unmultiplied(56, 44, 68, 110),
+        egui::Color32::from_rgba_unmultiplied(18, 18, 18, 220),
+    );
+
+    let pad = 16.0;
+    let art_size = height - pad * 2.0;
+    let art_rect = Rect::from_min_size(rect.min + vec2(pad, pad), Vec2::splat(art_size));
+    let banner_art = app
+        .home
+        .made_for_you
+        .get()
+        .and_then(|list| list.first())
+        .and_then(|pl| pick_image(&pl.images, app.art_px(art_size)))
+        .or_else(|| {
+            app.library
+                .playlists
+                .get()
+                .and_then(|list| list.first())
+                .and_then(|pl| pick_image(&pl.images, app.art_px(art_size)))
+        });
+    widgets::paint_cover(
+        ui,
+        &palette,
+        banner_art,
+        art_rect,
+        6.0,
+        Icon::Radio,
+        Some(app.backend.art()),
+    );
+
+    let content_rect = Rect::from_min_max(
+        pos2(art_rect.right() + 20.0, rect.top() + pad),
+        pos2(rect.right() - pad, rect.bottom() - pad),
+    );
+    let info_rect = Rect::from_min_max(
+        content_rect.min,
+        pos2(content_rect.right(), content_rect.bottom() - 44.0),
+    );
+    let mut child = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(info_rect)
+            .layout(egui::Layout::top_down(egui::Align::Min)),
+    );
+    child.set_clip_rect(info_rect.intersect(ui.clip_rect()));
+    child.horizontal(|ui| {
+        theme::text(
+            ui,
+            "Topsify Radio",
+            theme::semibold(12.5),
+            egui::Color32::from_gray(180),
+        );
+        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            let more = theme::icon_button(
+                ui,
+                Icon::Ellipsis,
+                16.0,
+                egui::Color32::from_gray(180),
+                egui::Color32::WHITE,
+                &gettext(app.locale, "More options"),
+            );
+            egui::Popup::menu(&more)
+                .frame(widgets::menu_frame(&palette))
+                .show(|ui| {
+                    if widgets::menu_item(ui, &palette, Some(Icon::X), &gettext(app.locale, "Hide"))
+                    {
+                        app.settings.home.promo.visible = false;
+                        app.mark_settings_dirty();
+                    }
+                });
+        });
+    });
+    child.add_space(6.0);
+    let fallback_headline = gettext(app.locale, "Popular songs and trending stations");
+    let headline = app
+        .home
+        .made_for_you
+        .get()
+        .and_then(|list| list.first())
+        .map(|pl| pl.name.as_str())
+        .unwrap_or(&fallback_headline);
+    theme::text(
+        &mut child,
+        headline,
+        theme::bold(22.0),
+        egui::Color32::WHITE,
+    );
+    child.add_space(4.0);
+    theme::text(
+        &mut child,
+        gettext(
+            app.locale,
+            "Popular songs and recommendations picked for you.",
+        ),
+        theme::regular(13.5),
+        egui::Color32::from_gray(180),
+    );
+    child.add_space(14.0);
+    let listen_label = gettext(app.locale, "Listen now");
+    let btn_font = theme::bold(13.5);
+    let galley = child.painter().layout_no_wrap(
+        listen_label.to_string(),
+        btn_font.clone(),
+        egui::Color32::BLACK,
+    );
+    let btn_size = vec2(galley.size().x + 28.0, 34.0);
+    let btn_rect = Rect::from_min_size(
+        pos2(content_rect.left(), content_rect.bottom() - btn_size.y),
+        btn_size,
+    );
+    let btn_resp = ui.interact(btn_rect, egui::Id::new("home-promo-play"), Sense::click());
+    btn_resp.widget_info(|| {
+        egui::WidgetInfo::labeled(
+            egui::WidgetType::Button,
+            ui.is_enabled(),
+            listen_label.as_ref(),
+        )
+    });
+    let btn_bg = if btn_resp.hovered() {
+        egui::Color32::from_rgb(240, 240, 240)
+    } else {
+        egui::Color32::WHITE
+    };
+    ui.painter().rect_filled(btn_rect, 17.0, btn_bg);
+    ui.painter().text(
+        btn_rect.center(),
+        egui::Align2::CENTER_CENTER,
+        listen_label,
+        btn_font,
+        egui::Color32::BLACK,
+    );
+    if btn_resp.clicked()
+        && let Some(first_uri) = app
+            .home
+            .made_for_you
+            .get()
+            .and_then(|list| list.first())
+            .map(|pl| pl.uri.clone())
+            .or_else(|| {
+                app.library
+                    .playlists
+                    .get()
+                    .and_then(|list| list.first())
+                    .map(|pl| pl.uri.clone())
+            })
+    {
+        app.actions.push(Action::PlayContext {
+            uri: first_uri,
+            offset_uri: None,
+            offset_index: None,
+        });
     }
 }
 
@@ -69,6 +294,7 @@ struct Tile {
 
 /// The height of a quick-access tile, and so the side of its cover.
 const TILE_HEIGHT: f32 = 60.0;
+const VISUAL_TILE_HEIGHT: f32 = 64.0;
 
 /// Liked Songs and the first playlists, as Home's quick-access tiles.
 fn quick_access_tiles(app: &App) -> Vec<Tile> {
@@ -106,122 +332,145 @@ fn quick_access(app: &mut App, ui: &mut egui::Ui) {
     let palette = app.palette;
     let tiles = quick_access_tiles(app);
     let available = ui.available_width();
-    let columns = ((available / 300.0).floor() as usize).clamp(2, 4);
-    let gap = 10.0;
-    let tile_width = (available - gap * (columns as f32 - 1.0)) / columns as f32;
-    let rows = tiles.len().div_ceil(columns);
-    for row in 0..rows {
-        ui.horizontal(|ui| {
-            ui.spacing_mut().item_spacing.x = gap;
-            for column in 0..columns {
-                let Some(Tile {
-                    image,
-                    name,
-                    page,
-                    uri,
-                    liked,
-                    owned_playlist,
-                }) = tiles.get(row * columns + column)
-                else {
-                    break;
-                };
-                let (rect, response) =
-                    ui.allocate_exact_size(vec2(tile_width, TILE_HEIGHT), Sense::click());
-                if ui.is_rect_visible(rect) {
-                    let hovered = ui.rect_contains_pointer(rect);
-                    let fill = if hovered {
-                        palette.surface_hover
+    let columns = 4usize;
+    let gap = 12.0;
+    let tile_width = ((available - gap * (columns as f32 - 1.0)) / columns as f32).max(120.0);
+    // Official Spotify renders 1 row x 4 columns in the compact top shortcut bar.
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = gap;
+        for Tile {
+            image,
+            name,
+            page,
+            uri,
+            liked,
+            owned_playlist,
+        } in tiles.iter().take(columns)
+        {
+            let (rect, response) =
+                ui.allocate_exact_size(vec2(tile_width, VISUAL_TILE_HEIGHT), Sense::click());
+            if ui.is_rect_visible(rect) {
+                let anim_id = response.id.with("tile-hover-anim");
+                let hovered = ui.rect_contains_pointer(rect);
+                if hovered && ui.is_enabled() {
+                    let tint = if *liked {
+                        Some(egui::Color32::from_rgb(0x50, 0x38, 0xc8))
                     } else {
-                        palette.surface
+                        app.tint_for(image.as_deref())
                     };
-                    ui.painter().rect_filled(rect, CornerRadius::same(6), fill);
-                    let cover = Rect::from_min_size(rect.min, Vec2::splat(TILE_HEIGHT));
-                    if *liked {
-                        super::sidebar::liked_cover(ui, cover, 6.0);
-                    } else {
-                        widgets::paint_cover(
-                            ui,
-                            &palette,
-                            image.as_deref(),
-                            cover,
-                            6.0,
-                            Icon::Music,
-                            Some(app.backend.art()),
-                        );
+                    if let Some(tint) = tint {
+                        ui.data_mut(|data| {
+                            data.insert_temp(egui::Id::new(HOME_HOVER_TINT_ID), tint)
+                        });
                     }
-                    let play_room = if hovered && uri.is_some() { 52.0 } else { 12.0 };
-                    let text_rect = Rect::from_min_max(
-                        pos2(cover.right() + 12.0, rect.top()),
-                        pos2(rect.right() - play_room, rect.bottom()),
+                }
+                let hover_t = ui.ctx().animate_bool_with_time_and_easing(
+                    anim_id,
+                    hovered,
+                    0.16,
+                    egui::emath::easing::cubic_out,
+                );
+                let alpha = (18.0 + 18.0 * hover_t) as u8;
+                let fill = egui::Color32::from_white_alpha(alpha);
+                ui.painter().rect_filled(rect, CornerRadius::same(4), fill);
+                let cover = Rect::from_min_size(rect.min, Vec2::splat(VISUAL_TILE_HEIGHT));
+                if *liked {
+                    super::sidebar::liked_cover(ui, cover, 4.0);
+                } else {
+                    widgets::paint_cover(
+                        ui,
+                        &palette,
+                        image.as_deref(),
+                        cover,
+                        4.0,
+                        Icon::Music,
+                        Some(app.backend.art()),
                     );
-                    crate::bidi::paint_line(
-                        &ui.painter().with_clip_rect(text_rect),
-                        text_rect.left(),
-                        text_rect.right(),
-                        rect.center().y,
-                        name,
-                        theme::bold(14.5),
+                }
+                let play_room = if hover_t > 0.01 && uri.is_some() {
+                    70.0 * hover_t + 10.0 * (1.0 - hover_t)
+                } else {
+                    10.0
+                };
+                let text_rect = Rect::from_min_max(
+                    pos2(cover.right() + 16.0, rect.top()),
+                    pos2(rect.right() - play_room, rect.bottom()),
+                );
+                let galley = crate::bidi::layout(
+                    ui.painter(),
+                    name,
+                    theme::bold(14.0),
+                    palette.text,
+                    text_rect.width(),
+                    2,
+                    Some('…'),
+                );
+                let text_rect =
+                    text_rect.translate(vec2(0.0, (text_rect.height() - galley.size().y) / 2.0));
+                ui.painter()
+                    .with_clip_rect(Rect::from_min_max(
+                        pos2(text_rect.left(), rect.top()),
+                        pos2(text_rect.right(), rect.bottom()),
+                    ))
+                    .galley(
+                        crate::bidi::galley_pos(text_rect, &galley),
+                        galley,
                         palette.text,
                     );
-                    if hovered && let Some(uri) = uri {
-                        let context_here =
-                            app.playing_context_uri().as_deref() == Some(uri.as_str());
-                        let playing_here = context_here && app.believed_playing();
-                        let button = Rect::from_center_size(
-                            pos2(rect.right() - 28.0, rect.center().y),
-                            Vec2::splat(40.0),
-                        );
-                        let mut child =
-                            ui.new_child(egui::UiBuilder::new().max_rect(button).layout(
-                                egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
-                            ));
-                        if theme::circle_button(
-                            &mut child,
-                            if playing_here {
-                                Icon::PauseFilled
-                            } else {
-                                Icon::PlayFilled
-                            },
-                            40.0,
-                            palette.accent,
-                            palette.accent_hover,
-                            palette.on_accent,
-                            &gettext(app.locale, if playing_here { "Pause" } else { "Play" }),
-                        )
-                        .clicked()
-                        {
-                            if context_here {
-                                app.actions.push(Action::TogglePlay);
-                            } else {
-                                app.actions.push(Action::PlayContext {
-                                    uri: uri.clone(),
-                                    offset_uri: None,
-                                    offset_index: None,
-                                });
-                            }
+                if hover_t > 0.01
+                    && let Some(uri) = uri
+                {
+                    let context_here = app.playing_context_uri().as_deref() == Some(uri.as_str());
+                    let playing_here = context_here && app.believed_playing();
+                    let slide_x = (1.0 - hover_t) * 8.0;
+                    let button = Rect::from_center_size(
+                        pos2(rect.right() - 32.0 + slide_x, rect.center().y),
+                        Vec2::splat(48.0),
+                    );
+                    let mut child = ui.new_child(egui::UiBuilder::new().max_rect(button).layout(
+                        egui::Layout::centered_and_justified(egui::Direction::LeftToRight),
+                    ));
+                    child.set_opacity(hover_t);
+                    if theme::circle_button(
+                        &mut child,
+                        if playing_here {
+                            Icon::PauseFilled
+                        } else {
+                            Icon::PlayFilled
+                        },
+                        48.0,
+                        palette.accent,
+                        palette.accent_hover,
+                        palette.on_accent,
+                        &gettext(app.locale, if playing_here { "Pause" } else { "Play" }),
+                    )
+                    .clicked()
+                    {
+                        if context_here {
+                            app.actions.push(Action::TogglePlay);
+                        } else {
+                            app.actions.push(Action::PlayContext {
+                                uri: uri.clone(),
+                                offset_uri: None,
+                                offset_index: None,
+                            });
                         }
                     }
                 }
-                if response.clicked() {
-                    app.actions.push(Action::Open(page.clone()));
-                }
-                if !liked && let Some(uri) = uri {
-                    egui::Popup::context_menu(&response)
-                        .id(ui.make_persistent_id(("quick-access-menu", uri)))
-                        .frame(widgets::menu_frame(&palette))
-                        .show(|ui| {
-                            widgets::context_menu_items(
-                                ui,
-                                app,
-                                uri,
-                                name,
-                                owned_playlist.as_ref(),
-                            );
-                        });
-                }
             }
-        });
-    }
+            if response.clicked() {
+                app.actions.push(Action::Open(page.clone()));
+            }
+            if !liked && let Some(uri) = uri {
+                egui::Popup::context_menu(&response)
+                    .id(ui.make_persistent_id(("quick-access-menu", uri)))
+                    .frame(widgets::menu_frame(&palette))
+                    .show(|ui| {
+                        widgets::context_menu_items(ui, app, uri, name, owned_playlist.as_ref());
+                    });
+            }
+        }
+    });
 }
 
 /// Renders session Home cards or approximate fallback cards in the same shelf.
@@ -235,11 +484,22 @@ fn made_for_you(app: &mut App, ui: &mut egui::Ui) {
     if playlists.is_empty() && !loading && failure.is_none() {
         return;
     }
-    widgets::shelf(
+    let user_name = app
+        .user
+        .as_ref()
+        .map(|u| u.name().to_string())
+        .filter(|n| !n.is_empty());
+    let overtitle = user_name
+        .as_ref()
+        .map(|_| gettext(app.locale, "Made for").into_owned());
+    let shelf_title = user_name.unwrap_or_else(|| gettext(app.locale, "Made for you").into_owned());
+    widgets::shelf_with_overtitle(
         ui,
         &palette,
+        Some(app.locale),
         "made-for-you",
-        &gettext(app.locale, "Made for you"),
+        overtitle.as_deref(),
+        &shelf_title,
         |ui| {
             if playlists.is_empty() && loading {
                 widgets::loading_row(ui, &palette, app.locale);
@@ -262,11 +522,19 @@ fn made_for_you(app: &mut App, ui: &mut egui::Ui) {
                     app.playing_context_uri().as_deref() == Some(playlist.uri.as_str());
                 let playing_here = context_here && app.believed_playing();
                 let card_art = app.art_px(widgets::CARD_ART);
+                let is_mix_or_radio = playlist.name.contains("Mix")
+                    || playlist.name.contains("Rádio")
+                    || playlist.name.contains("Radio");
+                let card_title = if is_mix_or_radio {
+                    ""
+                } else {
+                    playlist.name.as_str()
+                };
                 let card = widgets::card(
                     ui,
                     app,
                     pick_image(&playlist.images, card_art),
-                    &playlist.name,
+                    card_title,
                     &subtitle,
                     widgets::CardCover::square(playing_here),
                 );
@@ -310,7 +578,7 @@ fn recently_played(app: &mut App, ui: &mut egui::Ui) {
         Loadable::Loading | Loadable::NotLoaded => {
             widgets::shelf(
                 ui,
-                &palette,
+                &palette, app.locale,
                 "recent",
                 &gettext(app.locale, "Recently played"),
                 |ui| widgets::loading_row(ui, &palette, app.locale),
@@ -320,7 +588,7 @@ fn recently_played(app: &mut App, ui: &mut egui::Ui) {
         Loadable::Failed(message) => {
             widgets::shelf(
                 ui,
-                &palette,
+                &palette, app.locale,
                 "recent",
                 &gettext(app.locale, "Recently played"),
                 |ui| {
@@ -347,7 +615,7 @@ fn recently_played(app: &mut App, ui: &mut egui::Ui) {
     }
     widgets::shelf(
         ui,
-        &palette,
+        &palette, app.locale,
         "recent",
         &gettext(app.locale, "Recently played"),
         |ui| {
@@ -484,7 +752,7 @@ fn podcasts(app: &mut App, ui: &mut egui::Ui) {
     }
     widgets::shelf(
         ui,
-        &palette,
+        &palette, app.locale,
         "podcasts",
         &gettext(app.locale, "Your podcasts"),
         |ui| {
@@ -547,7 +815,7 @@ fn top_artists(app: &mut App, ui: &mut egui::Ui) {
         Loadable::Loading | Loadable::NotLoaded => {
             widgets::shelf(
                 ui,
-                &palette,
+                &palette, app.locale,
                 "top-artists",
                 &gettext(app.locale, "Your top artists"),
                 |ui| widgets::loading_row(ui, &palette, app.locale),
@@ -557,7 +825,7 @@ fn top_artists(app: &mut App, ui: &mut egui::Ui) {
         Loadable::Failed(message) => {
             widgets::shelf(
                 ui,
-                &palette,
+                &palette, app.locale,
                 "top-artists",
                 &gettext(app.locale, "Your top artists"),
                 |ui| {
@@ -572,7 +840,7 @@ fn top_artists(app: &mut App, ui: &mut egui::Ui) {
     }
     widgets::shelf(
         ui,
-        &palette,
+        &palette, app.locale,
         "top-artists",
         &gettext(app.locale, "Your top artists"),
         |ui| {
