@@ -4,7 +4,7 @@ A Spotify-inspired desktop interface built on [Spotifast](https://github.com/crm
 
 [Download for Windows](https://github.com/GUHPY/LiterallySpotify-Spotifast-Mod/releases/latest) · [Visual comparison](docs/UI_COMPARISON.md) · [All features](docs/FEATURES.md) · [Engine updates](docs/ENGINE_UPDATES.md)
 
-![LiterallySpotify on Windows](docs/screenshots/mod/live-home.png)
+![LiterallySpotify search preview on Windows](docs/screenshots/mod/live-search-preview.png)
 
 ## The interface
 
