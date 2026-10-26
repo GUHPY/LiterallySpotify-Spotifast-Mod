@@ -16,7 +16,7 @@ The initial source came from the customized Debloat/Spotify commit recorded in e
 
 `engine-policy.json` allowlists playback, authentication, API, session, audio, discovery/device files and engine dependency names.
 
-The integration script excludes the UI tree, theme/motion code, assets, window shell, entrypoint, updater, documentation, packaging and workflows. It fingerprints protected files and checks that non-engine dependency entries remain unchanged. Shared app/model files are not automatically imported; changes at that interface need a reviewed adaptation.
+The integration script excludes the UI tree, settings/preferences, theme/motion code, bundled themes, assets, window shell, entrypoint, updater, documentation, packaging and workflows. It fingerprints protected files and checks that non-engine dependency entries remain unchanged. Shared app/model files are not automatically imported; changes at that interface need a reviewed adaptation.
 
 A three-way patch against the recorded upstream anchor preserves local core changes when they can be reconciled. Conflicts stop automatic integration and leave a reviewable candidate. The process never resolves a conflict by replacing the custom UI with upstream files.
 

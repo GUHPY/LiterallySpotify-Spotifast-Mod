@@ -18,4 +18,5 @@ docs/.bundle/
 *.log
 __pycache__/
 
-/themes/
+/themes/*
+!/themes/OLED Green.json

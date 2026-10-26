@@ -521,7 +521,7 @@ impl Default for Settings {
             zoom: 1.0,
             winamp_window: false,
             winamp_show_taskbar: true,
-            custom_titlebar: false,
+            custom_titlebar: cfg!(target_os = "windows"),
             skin: None,
             random_skin: false,
             skin_scale: None,
@@ -1016,6 +1016,24 @@ impl ManualProxy {
 #[cfg(test)]
 mod tests {
     use super::Settings;
+
+    #[test]
+    fn windows_profiles_use_the_integrated_titlebar_and_preserve_saved_choices() {
+        let expected = cfg!(target_os = "windows");
+        assert_eq!(Settings::default().custom_titlebar, expected);
+        let older: Settings = serde_json::from_str(r#"{"zoom":1.2}"#).unwrap();
+        assert_eq!(older.custom_titlebar, expected);
+        assert_eq!(older.zoom, 1.2);
+        for custom in [false, true] {
+            let saved: Settings = serde_json::from_value(serde_json::json!({
+                "custom_titlebar": custom, "zoom": 1.2
+            }))
+            .unwrap();
+            let restored: Settings = serde_json::from_str(&saved.encode().unwrap()).unwrap();
+            assert_eq!(restored.custom_titlebar, custom);
+            assert_eq!(restored.zoom, 1.2);
+        }
+    }
 
     #[test]
     fn new_profiles_follow_the_system_and_saved_choices_are_preserved() {

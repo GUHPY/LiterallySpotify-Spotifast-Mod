@@ -12988,6 +12988,7 @@ mod tests {
     #[test]
     fn choosing_the_custom_title_bar_recreates_only_the_main_window() {
         let mut app = headless_app();
+        app.settings.custom_titlebar = false;
         let ctx = egui::Context::default();
         app.apply(Action::SetCustomTitlebar(true), &ctx);
         assert!(app.settings.custom_titlebar);

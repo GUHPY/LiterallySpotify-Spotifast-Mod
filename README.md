@@ -8,6 +8,8 @@ A Spotify-inspired desktop interface built on [Spotifast](https://github.com/crm
 
 ## The interface
 
+Windows uses the integrated title bar by default, with navigation, profile and window controls on the same row. The native-frame preference remains available in Settings.
+
 Home uses artwork colours, playlist shortcuts and horizontal shelves. A persistent top bar holds navigation, search, notifications and the profile menu. The library and Now Playing panels frame the content, and playback controls stay at the bottom.
 
 Search suggestions appear inside the top-bar dropdown while the current page stays visible. Enter opens the full results view. Recent selections keep their artwork and media identity across restarts. A result's cover supports play and pause, with a dark overlay, row highlight and a short elastic press-and-release animation.
@@ -18,12 +20,12 @@ The [visual tour](docs/UI_COMPARISON.md) presents the final interface alongside 
 
 ## Install
 
-The first release targets **Windows x64**. Choose an asset from [Releases](https://github.com/GUHPY/LiterallySpotify-Spotifast-Mod/releases/latest):
+Published packages target **Windows x64**. Choose an asset from [Releases](https://github.com/GUHPY/LiterallySpotify-Spotifast-Mod/releases/latest):
 
 | Asset | Use |
 | --- | --- |
-| `literallyspotify-v0.1.0-x86_64-pc-windows-msvc-setup.exe` | Install or update the Windows app and its Start menu shortcut. |
-| `literallyspotify-v0.1.0-x86_64-pc-windows-msvc.zip` | Extract the whole folder and run `Spotify.exe`. Keep `literallyspotify-portable.txt` beside it. |
+| `literallyspotify-v0.1.1-x86_64-pc-windows-msvc-setup.exe` | Install or update the Windows app and its Start menu shortcut. |
+| `literallyspotify-v0.1.1-x86_64-pc-windows-msvc.zip` | Extract the whole folder and run `Spotify.exe`. Keep `literallyspotify-portable.txt` beside it. |
 | `checksums.txt` and `checksums.txt.sig` | SHA-256 checksums and the Ed25519 signature verified by the app updater. |
 
 The installed executable is **Spotify.exe**, with the Windows shortcut named **Spotify**. The installer uses `%LOCALAPPDATA%\Programs\Spotify`, updating the existing custom installation at that path. The Microsoft Store Spotify package has a different location.

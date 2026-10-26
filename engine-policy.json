@@ -13,10 +13,10 @@
     "fastframe-audio", "fastframe-http", "hyper-proxy2"
   ],
   "protected_paths": [
-    "src/ui", "src/theme.rs", "src/motion.rs",
+    "src/ui", "src/theme.rs", "src/motion.rs", "src/settings.rs",
     "src/updates.rs", "src/entrypoint.rs", "src/window.rs",
     "src/paths.rs", "src/single_instance.rs",
-    "assets/icons", "assets/fonts", "assets/i18n", "assets/skins",
+    "assets/icons", "assets/fonts", "assets/i18n", "assets/skins", "themes",
     "assets/update-public-key.hex", "packaging", ".github",
     "docs", "README.md", "LICENSE", "engine-policy.json"
   ]
